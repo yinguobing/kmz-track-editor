@@ -227,7 +227,7 @@ function updateSelInfo(s, e) {
     '\u8d77\u70b9: ' + p1.lat.toFixed(5) + ', ' + p1.lng.toFixed(5) + '<br>' +
     '\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '<br>' +
     '<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px;display:flex;gap:6px">' +
-    '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); confirmDelete()" style="background:var(--coral);color:#fff;border:none;border-radius:999px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">\u2715 删除</button>' +
+    '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); confirmDelete()" style="background:var(--coral);color:#fff;border:none;border-radius:999px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">删除</button>' +
     '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); clearSel()" style="background:var(--surface-soft);border:1px solid var(--border);color:var(--ink);border-radius:999px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">重置</button>' +
     '</div></div>';
   L.popup({closeButton: true, maxWidth: 300}).setLatLng([mlat, mlng]).setContent(html).openOn(mm);
