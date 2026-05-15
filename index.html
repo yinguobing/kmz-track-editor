@@ -4,41 +4,229 @@
 <title>两步路轨迹编辑器</title>
 <link rel="stylesheet" href="/lib/leaflet.css">
 <script src="/lib/leaflet.js"></script>
-<style>
+<style>/* ===== 山野风 · 两步路轨迹编辑器 ===== */
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#1a1a2e;color:#fff;height:100vh;overflow:hidden}
+
+:root {
+  --bg-deep: #0f172a;       /* 深空 */
+  --bg-surface: #1e293b;    /* 山岩 */
+  --bg-card: #1e293b;       /* 卡片底 */
+  --bg-hover: #334155;      /* 悬停 */
+  --border: #334155;        /* 边框 */
+  --border-light: #475569;
+  --text-primary: #f1f5f9;  /* 主文字 */
+  --text-secondary: #94a3b8;/* 辅文字 */
+  --text-muted: #64748b;    /* 弱文字 */
+  --green: #059669;         /* 翠绿 - 山林 */
+  --green-hover: #047857;
+  --green-bg: rgba(5,150,105,0.12);
+  --amber: #f59e0b;         /* 琥珀 - 晚霞 */
+  --amber-bg: rgba(245,158,11,0.12);
+  --red: #ef4444;           /* 赤红 - 红枫 */
+  --red-hover: #dc2626;
+  --red-bg: rgba(239,68,68,0.12);
+  --blue: #3b82f6;          /* 晴空 */
+  --blue-bg: rgba(59,130,246,0.12);
+  --purple: #7c3aed;        /* 紫霞 */
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg-deep);color:var(--text-primary);
+  height:100vh;overflow:hidden;
+  -webkit-font-smoothing:antialiased
+}
+
 #app{display:flex;height:100vh;width:100vw}
+
+/* ---- 地图区域 ---- */
 #map{flex:1;height:100vh}
-#panel{width:280px;min-width:280px;background:#16213e;border-left:1px solid #0f3460;display:flex;flex-direction:column;overflow-y:auto}
-#panel-header{padding:12px 14px 8px;border-bottom:1px solid #0f3460;font-weight:bold;font-size:14px;display:flex;align-items:center;gap:6px}
-#panel-header .track-icon{font-size:18px}
-#panel-body{padding:10px 14px;flex:1}
-.section{margin-bottom:14px}
-.section-title{font-size:11px;text-transform:uppercase;color:#6b7280;margin-bottom:6px;letter-spacing:1px}
-.btn-group{display:flex;flex-wrap:wrap;gap:5px}
-.btn-group button{flex:1;min-width:60px}
-.btn-green{background:#059669;color:#fff}
-.btn-red{background:#dc2626;color:#fff}
-.btn-gray{background:#4b5563;color:#fff;border:1px solid #6b7280}
-.btn-blue{background:#2563eb;color:#fff}
-.btn-purple{background:#7c3aed;color:#fff}
-button{padding:6px 10px;border:none;border-radius:5px;cursor:pointer;font-size:12px;white-space:nowrap;font-weight:600}
-button:hover{filter:brightness(1.15)}
+
+/* ---- 侧边栏 ---- */
+#panel{
+  width:290px;min-width:290px;
+  background:var(--bg-surface);
+  border-left:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow-y:auto
+}
+#panel::-webkit-scrollbar{width:5px}
+#panel::-webkit-scrollbar-track{background:transparent}
+#panel::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+#panel::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+
+#panel-header{
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+  font-weight:700;font-size:15px;
+  display:flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg, rgba(5,150,105,0.08) 0%, transparent 60%);
+  letter-spacing:0.3px;
+  color:var(--green)
+}
+#panel-header .track-icon{font-size:20px}
+
+#panel-body{padding:12px 14px;flex:1}
+
+/* ---- 功能卡片 ---- */
+.card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:10px 12px;
+  margin-bottom:10px
+}
+.card-title{
+  font-size:10px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1.2px;
+  color:var(--text-muted);
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:5px
+}
+.card-title .dot{
+  display:inline-block;width:6px;height:6px;
+  border-radius:50%;background:var(--green)
+}
+
+/* ---- 表单控件 ---- */
+select{
+  padding:6px 10px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+  background:var(--bg-deep);color:var(--text-primary);
+  font-size:12px;width:100%;cursor:pointer;
+  outline:none;transition:border-color 0.15s
+}
+select:hover,select:focus{border-color:var(--green)}
+
+label.checkbox{
+  display:flex;align-items:center;gap:7px;
+  font-size:12px;color:var(--text-secondary);
+  cursor:pointer;padding:5px 0;
+  user-select:none
+}
+label.checkbox input[type=checkbox]{
+  accent-color:var(--green);width:15px;height:15px;cursor:pointer
+}
+
+/* ---- 按钮 ---- */
+button{
+  padding:6px 12px;border:none;border-radius:var(--radius-sm);
+  cursor:pointer;font-size:12px;font-weight:600;
+  white-space:nowrap;transition:all 0.15s ease;
+  outline:none;
+  letter-spacing:0.2px
+}
 button:active{transform:translateY(1px)}
-select{padding:5px 8px;border-radius:5px;border:1px solid #0f3460;background:#1a1a2e;color:#fff;font-size:12px;width:100%;cursor:pointer}
-label.checkbox{display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d5db;cursor:pointer;padding:4px 0}
-.stats{font-size:12px;color:#9ca3af;line-height:1.8;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px 10px}
-.stats b{color:#fff}
-.stats .red{color:#fca5a5}
-.stats .green{color:#22c55e}
-#status{font-size:12px;line-height:1.6;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px 10px;margin-bottom:10px;max-height:120px;overflow-y:auto}
-#removalsList{font-size:11px;max-height:200px;overflow-y:auto;display:none}
-#removalsList div{padding:2px 4px;color:#fca5a5;border-bottom:1px solid rgba(255,255,255,0.05)}
-#removalsList .header{color:#6b7280;font-size:10px;text-transform:uppercase;padding:4px 4px 2px;border-bottom:1px solid #0f3460}
-#overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:3000;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-size:18px}
-#overlay .spinner{width:40px;height:40px;border:4px solid #374151;border-top:4px solid #22c55e;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+button:disabled{opacity:0.5;cursor:not-allowed}
+
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:var(--green-hover);box-shadow:0 0 12px rgba(5,150,105,0.3)}
+
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-hover);box-shadow:0 0 12px rgba(239,68,68,0.25)}
+
+.btn-gray{background:var(--bg-hover);color:var(--text-primary);border:1px solid var(--border)}
+.btn-gray:hover{background:var(--border-light)}
+
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{box-shadow:0 0 12px rgba(59,130,246,0.25)}
+
+.btn-purple{background:var(--purple);color:#fff}
+.btn-purple:hover{box-shadow:0 0 12px rgba(124,58,237,0.25)}
+
+.btn-group{display:flex;flex-wrap:wrap;gap:5px}
+.btn-group button{flex:1;min-width:55px}
+
+/* ---- 统计信息 ---- */
+.stats{
+  font-size:12px;color:var(--text-secondary);line-height:1.9;
+  background:rgba(0,0,0,0.15);border-radius:var(--radius-sm);
+  padding:8px 10px
+}
+.stats b{color:var(--text-primary)}
+.stats .red{color:var(--red)}
+.stats .green{color:var(--green)}
+
+/* ---- 状态信息 ---- */
+#status{
+  font-size:12px;line-height:1.6;
+  background:rgba(0,0,0,0.15);
+  border-radius:var(--radius-sm);
+  padding:8px 10px;
+  max-height:120px;overflow-y:auto;
+  color:var(--text-secondary)
+}
+#status b{color:var(--text-primary)}
+
+/* ---- 待删除列表 ---- */
+#removalsList{
+  font-size:11px;max-height:200px;overflow-y:auto;
+  display:none
+}
+#removalsList::-webkit-scrollbar{width:4px}
+#removalsList::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}
+#removalsList div{
+  padding:3px 6px;color:#fca5a5;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:11px
+}
+#removalsList div:last-child{border-bottom:none}
+#removalsList .header{
+  color:var(--text-muted);font-size:10px;
+  text-transform:uppercase;letter-spacing:1px;
+  padding:3px 6px 4px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:2px
+}
+
+/* ---- 覆盖层 ---- */
+#overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:3000;background:rgba(15,23,42,0.7);
+  backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;color:#fff;font-size:16px
+}
+#overlay .spinner{
+  width:36px;height:36px;
+  border:3px solid rgba(255,255,255,0.15);
+  border-top:3px solid var(--green);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin-bottom:14px
+}
 @keyframes spin{to{transform:rotate(360deg)}}
-</style></head>
+
+/* ---- Leaflet 控件风格覆盖 ---- */
+.leaflet-control-zoom a{
+  background:var(--bg-surface) !important;
+  color:var(--text-primary) !important;
+  border-color:var(--border) !important;
+  font-weight:bold !important;
+  transition:background 0.15s !important
+}
+.leaflet-control-zoom a:hover{
+  background:var(--bg-hover) !important
+}
+.leaflet-control-attribution{
+  background:rgba(30,41,59,0.85) !important;
+  color:var(--text-muted) !important;
+  font-size:10px !important;
+  padding:2px 6px !important
+}
+.leaflet-control-attribution a{
+  color:var(--green) !important
+}
+.leaflet-control{
+  border:1px solid var(--border) !important;
+  border-radius:var(--radius-sm) !important;
+  overflow:hidden !important
+}
+.leaflet-control-zoom{
+  border:none !important
+}</style></head>
 <body>
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
 <div id="app">
@@ -48,15 +236,15 @@ label.checkbox{display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d
       <span class="track-icon">&#9998;</span> <span>两步路轨迹编辑器</span>
     </div>
     <div id="panel-body">
-      <div class="section">
-        <div class="section-title">底图</div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> 底图</div>
         <select id="mapSelect">
           <option value="satellite">&#128147; 卫星地图</option>
           <option value="osm">&#127758; 标准地图</option>
         </select>
       </div>
-      <div class="section">
-        <div class="section-title">选择与标记</div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> 选择与标记</div>
         <label class="checkbox"><input type="checkbox" id="modeSel"> 选择模式（点选轨迹起点/终点）</label>
         <div class="btn-group" style="margin-top:6px">
           <button class="btn-red" id="btnDel">&#128465; 删除范围</button>
@@ -64,28 +252,28 @@ label.checkbox{display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d
         </div>
         <button class="btn-red" id="btnClearAll" style="background:#b91c1c;margin-top:4px;width:100%">✕ 清空所有删除标记</button>
       </div>
-      <div class="section">
-        <div class="section-title">操作</div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> 操作</div>
         <div class="btn-group">
           <button class="btn-blue" id="btnShow">&#128196; 删除列表</button>
           <a href="/upload" style="flex:1;text-decoration:none"><button class="btn-purple" style="width:100%">📤 上传 KMZ</button></a>
         </div>
         <button class="btn-green" id="btnDownload" style="margin-top:5px;width:100%;padding:8px">&#11015; 下载 KMZ</button>
       </div>
-      <div class="section">
-        <div class="section-title">统计</div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> 统计</div>
         <div class="stats">
           总点数 <b id="totalPts">3245</b><br>
           已标记删除 <b class="red" id="delPts">0</b><br>
           最终点数 <b class="green" id="finalPts">3245</b>
         </div>
       </div>
-      <div class="section">
-        <div class="section-title">状态</div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> 状态</div>
         <div id="status"><b>青见梁穿越线</b><br>点击轨迹看详情。勾选「选择模式」后点选起点/终点。</div>
       </div>
-      <div class="section">
-        <div class="section-title">待删除范围</div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> 待删除范围</div>
         <div id="removalsList"></div>
       </div>
     </div>
