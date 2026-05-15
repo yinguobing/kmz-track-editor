@@ -102,6 +102,11 @@ function showInfo(i) {
 }
 
 pl.on('click', function(e) {
+  // If a range is selected, reopen range popup
+  if (ss !== null && se !== null) {
+    updateSelInfo(ss, se);
+    return;
+  }
   var i = nearestLL(e.latlng);
   if (i != null) showInfo(i);
 });
