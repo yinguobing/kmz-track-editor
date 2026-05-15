@@ -112,6 +112,9 @@ function updateStatsWithLocalStorage() {
 }
 
 var trackName = "两步路轨迹编辑器";
+// Global vars for map state - assigned in initEditor
+var mm, osm, sat, labels, activeLabels, pts, pl;
+var rv = [], ss = null, se = null, sm = [], removedLines = [];
 var DATA = [];  // loaded from track_data.json
 
 
@@ -122,24 +125,25 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
   DATA = d;
   P = DATA.map(function(d){return{idx:d[0],lat:d[1],lng:d[2],alt:d[3],time:d[4]};});
   updateStatsWithLocalStorage();
+  initEditor();
 }).catch(function(e){
   console.warn('No track data, upload a KMZ file:', e);
   P=[];
-  rebuildMap();
+  document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>';
 });
 
-// Guard: no data
-if (P.length > 0) {
+// Initialize map (called after data loads)
+function initEditor() {
 
 // Initialize map
-var mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
+mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
 
-var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
-var sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
-var labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
+osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
+sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
+labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
 sat.addTo(mm);
 labels.addTo(mm);
-var activeLabels = labels;
+activeLabels = labels;
 
 document.getElementById('mapSelect').onchange = function() {
   if (this.value == 'satellite') {
@@ -155,8 +159,8 @@ document.getElementById('mapSelect').onchange = function() {
   }
 };
 
-var pts = P.map(function(p) { return [p.lat, p.lng]; });
-var pl = L.polyline(pts, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(mm);
+pts = P.map(function(p) { return [p.lat, p.lng]; });
+pl = L.polyline(pts, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(mm);
 
 var step = Math.max(1, Math.floor(P.length / 30));
 for (var i = 0; i < P.length; i += step) {
@@ -191,7 +195,7 @@ pl.on('click', function(e) {
   if (i != null) showInfo(i);
 });
 
-var ss = null, se = null, sm = [], rv = [], removedLines = [];
+// ss, se, sm, rv, removedLines declared at global scope
 
 // Restore deletion marks from localStorage on page load
 (function() {
@@ -290,9 +294,7 @@ document.getElementById('btnDownload').onclick = function() {
 
 mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
 
-} else {
-  document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>';
-}
+}  // end initEditor
 
 
 function updateSelInfo(s, e) {
