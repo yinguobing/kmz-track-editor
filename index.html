@@ -2,422 +2,180 @@
 <html lang="zh-CN">
 <head><!--v=1778844373--><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>两步路轨迹编辑器</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        forest: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' },
-        earth: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
-        sunset: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' }
-      }
-    }
-  }
-}
-</script>
-
 <link rel="stylesheet" href="/lib/leaflet.css">
 <script src="/lib/leaflet.js"></script>
 <style>
-/* Minimal overrides for Leaflet and custom behavior */
+/* ===== 两步路轨迹编辑器 - 山野风主题 ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root {
+  --bg-deep: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-card: #1e293b;
+  --bg-hover: #334155;
+  --border: #334155;
+  --border-light: #475569;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --green: #059669;
+  --green-hover: #047857;
+  --red: #ef4444;
+  --red-hover: #dc2626;
+  --blue: #3b82f6;
+  --purple: #7c3aed;
+  --amber: #f59e0b;
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg-deep);color:var(--text);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{display:flex;height:100vh;width:100vw}
 #map{flex:1;height:100vh}
+
+/* Sidebar */
+#panel{width:300px;min-width:200px;max-width:500px;background:var(--bg-surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;position:relative}
 #panel::-webkit-scrollbar{width:5px}
 #panel::-webkit-scrollbar-track{background:transparent}
-#panel::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
-#removalsList::-webkit-scrollbar{width:4px}
-#removalsList::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}
-.leaflet-control-zoom a{background:#1e293b !important;color:#f1f5f9 !important;border-color:#334155 !important}
-.leaflet-control-zoom a:hover{background:#334155 !important}
-.leaflet-control-attribution{background:rgba(30,41,59,0.85) !important;color:#94a3b8 !important;font-size:10px !important;padding:2px 6px !important}
-.leaflet-control-attribution a{color:#10b981 !important}
-.leaflet-control{border:1px solid #334155 !important;border-radius:5px !important;overflow:hidden !important}
-.leaflet-control-zoom{border:none !important}
-#overlay{display:none;backdrop-filter:blur(4px)}
+#panel::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+
+#panel-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;background:linear-gradient(135deg,rgba(5,150,105,0.08) 0%,transparent 60%);letter-spacing:0.3px;color:var(--green)}
+#panel-body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+.section{padding:12px 16px;border-bottom:1px solid var(--border)}
+.section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.section-title .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green)}
+.section-export{border-top:1px solid var(--border);background:rgba(30,41,59,0.8);padding:12px 16px}
+.section-scroll{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+
+/* Stats row */
+.stats-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:8px}
+.stats-row b{color:var(--text)}
+.stats-row .red{color:var(--red)}
+.stats-row .green{color:var(--green)}
+
+/* Selection info */
+.sel-info{font-size:12px;color:var(--text-secondary);background:rgba(0,0,0,0.15);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;line-height:1.6;min-height:54px;max-height:100px;overflow-y:auto}
+
+/* Deletion list */
+.del-list{font-size:11px;overflow-y:auto;flex:1;min-height:0}
+.del-list .empty{text-align:center;padding:16px;color:var(--text-muted)}
+.del-list .item{display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:4px;cursor:pointer;transition:background 0.15s;font-size:11px}
+.del-list .item:hover{background:rgba(51,65,85,0.5)}
+.del-list .item .label{flex:1;color:var(--text-secondary)}
+.del-list .item .count{color:var(--text-muted)}
+.detail-text{font-size:10px;color:var(--text-muted)}
+.del-list .item .remove{opacity:0;color:var(--red);font-size:12px;padding:0 2px;transition:opacity 0.15s;background:none;border:none;cursor:pointer}
+.del-list .item:hover .remove{opacity:1}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:all 0.15s;letter-spacing:0.2px}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+.btn-full{width:100%}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover:not(:disabled){background:var(--green-hover);box-shadow:0 0 12px rgba(5,150,105,0.3)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover:not(:disabled){background:var(--red-hover);box-shadow:0 0 12px rgba(239,68,68,0.25)}
+.btn-gray{background:var(--bg-hover);color:var(--text);border:1px solid var(--border)}
+.btn-gray:hover{background:var(--border-light)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-group{display:flex;gap:6px}
+.btn-group .btn{flex:1}
+
+/* Select/dropdown */
+select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-deep);color:var(--text);font-size:12px;width:100%;cursor:pointer;outline:none;transition:border-color 0.15s}
+select:hover,select:focus{border-color:var(--green)}
+
+/* Checkbox */
+.checkbox{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:4px 0;user-select:none}
+.checkbox input{accent-color:var(--green);width:15px;height:15px;cursor:pointer}
+
+/* Status */
+#status{font-size:12px;line-height:1.6;background:rgba(0,0,0,0.15);border-radius:var(--radius-sm);padding:8px 10px;max-height:120px;overflow-y:auto;color:var(--text-secondary)}
+#status b{color:var(--text)}
+
+/* Overlay */
+#overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:3000;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;flex-direction:column;color:#fff;font-size:16px}
+#overlay .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.15);border-top:3px solid var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Leaflet overrides */
+.leaflet-control-zoom a{background:var(--bg-surface)!important;color:var(--text)!important;border-color:var(--border)!important;font-weight:bold!important}
+.leaflet-control-zoom a:hover{background:var(--bg-hover)!important}
+.leaflet-control-attribution{background:rgba(30,41,59,0.85)!important;color:var(--text-muted)!important;font-size:10px!important;padding:2px 6px!important}
+.leaflet-control-attribution a{color:var(--green)!important}
+.leaflet-control{border:1px solid var(--border)!important;border-radius:var(--radius-sm)!important;overflow:hidden!important}
+.leaflet-control-zoom{border:none!important}
+/* Resize handle */
+#resizeHandle{position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent}
 </style></head>
-<body class="bg-earth-900 text-earth-100 antialiased">
+<body >
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
-<div id="app" class="flex h-screen w-screen">
+<div id="app" >
   <div id="map"></div>
-  <div id="panel" class="w-[300px] bg-earth-800 border-l border-earth-700 flex flex-col overflow-y-auto relative" style="min-width:200px;max-width:500px">
-    <div id="panel-header" class="px-4 py-3 border-b border-earth-700 font-bold text-base flex items-center gap-2 bg-gradient-to-r from-forest-900/30 to-transparent text-forest-400">
+  <div id="panel" id="panel">
+    <div id="panel-header" >
       <span class="track-icon">&#9998;</span> <span>两步路轨迹编辑器</span>
     </div>
-        <div id="panel-body" class="flex-1 flex flex-col overflow-hidden">
-
-      
+            <div id="panel-body">
       <!-- Section 2: 项目配置 -->
-      <div class="px-4 py-3 border-b border-earth-700">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2">项目配置</div>
-        <a href="/upload"><button class="bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded px-3 py-2 text-xs w-full transition-all mb-2">📤 导入 KMZ</button></a>
-        <select id="mapSelect" class="w-full px-3 py-2 rounded bg-earth-900 border border-earth-600 text-earth-100 text-xs outline-none focus:border-forest-500 cursor-pointer">
+      <div class="section">
+        <div class="section-title"><span class="dot"></span> 项目配置</div>
+        <button class="btn btn-purple btn-full" style="margin-bottom:8px" onclick="document.getElementById('uploadModal').style.display='flex'">📤 导入 KMZ</button>
+        <select id="mapSelect">
           <option value="satellite">🛰️ 卫星地图</option>
           <option value="osm">🗺️ 标准地图</option>
         </select>
       </div>
       
       <!-- Section 3: 操作区 -->
-      <div class="px-4 py-3 border-b border-earth-700">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2">操作区</div>
-
-        <div id="selectionInfo" class="text-xs text-earth-400 bg-black/15 rounded p-2.5 mb-2 leading-relaxed min-h-[54px]" style="max-height:100px;overflow-y:auto">
-          点选轨迹上的起点和终点
-        </div>
-        <div class="flex gap-2">
-          <button class="bg-red-600 hover:bg-red-500 text-white font-semibold rounded px-3 py-2 text-xs flex-1 transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
-          <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-2 text-xs border border-earth-600 transition-all" id="btnClear">清除</button>
+      <div class="section">
+        <div class="section-title"><span class="dot"></span> 操作区</div>
+        <div id="selectionInfo" class="sel-info">点选轨迹上的起点和终点</div>
+        <div class="btn-group">
+          <button class="btn btn-red" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
+          <button class="btn btn-gray" id="btnClear">清除</button>
         </div>
       </div>
       
       <!-- Section 4: 已删除列表 -->
-      <div class="px-4 py-3 border-b border-earth-700 flex-1 overflow-hidden flex flex-col min-h-0">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center justify-between">
-          <span>已删除路径</span>
-          <span class="text-red-400 text-[10px] font-normal" id="delListCount">0 段</span>
+      <div class="section section-scroll">
+        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span><span class="dot"></span> 已删除路径</span>
+          <span style="color:var(--red);font-size:10px;font-weight:400" id="delListCount">0 段</span>
         </div>
-        <div id="removalsList" class="text-[11px] overflow-y-auto flex-1 min-h-0 space-y-0.5"></div>
+        <div id="removalsList" class="del-list"></div>
       </div>
       
       <!-- Section 5: 统计与导出 -->
-      <div class="px-4 py-3 border-t border-earth-700 bg-earth-800/80">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2">统计与导出</div>
-        <div class="flex items-center justify-between text-xs text-earth-400 mb-2">
-          <span>总 <b id="totalPts" class="text-earth-100">0</b></span>
-          <span>已删 <b class="text-red-400" id="delPts">0</b></span>
-          <span>最终 <b class="text-forest-400" id="finalPts">0</b></span>
+      <div class="section-export">
+        <div class="section-title"><span class="dot"></span> 统计与导出</div>
+        <div class="stats-row">
+          <span>总 <b id="totalPts">0</b></span>
+          <span>已删 <b class="red" id="delPts">0</b></span>
+          <span>最终 <b class="green" id="finalPts">0</b></span>
         </div>
-        <button class="bg-forest-600 hover:bg-forest-500 text-white font-semibold rounded px-3 py-2 text-xs w-full transition-all" id="btnDownload">⬇ 下载 KMZ</button>
+        <button class="btn btn-green btn-full" id="btnDownload">&#11015; 下载 KMZ</button>
       </div>
-    </div>
-  
-  <div id="resizeHandle" style="position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent"></div>
+    </div></div>
   </div>
 </div>
 
-<script>
+<!-- Upload Modal -->
+<div id="uploadModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:4000;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;text-align:center;max-width:420px;width:90%">
+    <h3 style="margin:0 0 4px;font-size:16px;color:#f1f5f9">📂 上传 KMZ 轨迹</h3>
+    <p style="margin:0 0 16px;color:#94a3b8;font-size:13px">支持两步路导出的 .kmz 文件</p>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" name="kmz" accept=".kmz" required style="margin:8px 0;color:#f1f5f9;font-size:13px"><br>
+      <button type="submit" class="btn btn-green" style="padding:8px 24px;margin-top:4px">上传并加载</button>
+    </form>
+    <div id="uploadStatus" style="margin-top:12px;font-size:13px"></div>
+    <button onclick="document.getElementById('uploadModal').style.display='none'" class="btn btn-gray" style="margin-top:8px;padding:4px 16px">取消</button>
+  </div>
+</div>
 
-function updateStatsWithLocalStorage() {
-  var saved = localStorage.getItem("trackEditor_removals");
-  if (saved) {
-    try {
-      rv = JSON.parse(saved);
-      if (rv.length > 0) {
-        var d = rv.reduce(function(a,r){return a+r.end-r.start+1}, 0);
-        document.getElementById("delPts").textContent = d;
-        document.getElementById("finalPts").textContent = P.length - d;
-        document.getElementById("selectionInfo").innerHTML = "<span class=\"text-amber-400\">已从缓存恢复 " + rv.length + " 个删除标记</span>";
-      }
-    } catch(e) {}
-  }
-}
-
-var trackName = "两步路轨迹编辑器";
-// Global vars for map state - assigned in initEditor
-var mm, osm, sat, labels, activeLabels, pts, pl;
-var rv = [], ss = null, se = null, sm = [], removedLines = [];
-var clearSel;
-var DATA = [];  // loaded from track_data.json
-
-
-var P = [];
-
-// Load track data from JSON
-fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
-  DATA = d;
-  P = DATA.map(function(d){return{idx:d[0],lat:d[1],lng:d[2],alt:d[3],time:d[4]};});
-  updateStatsWithLocalStorage();
-  initEditor();
-}).catch(function(e){
-  console.warn('No track data, upload a KMZ file:', e);
-  P=[];
-  document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>';
-});
-
-// Initialize map (called after data loads)
-function initEditor() {
-
-// Initialize map
-mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
-
-osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
-sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
-labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
-sat.addTo(mm);
-labels.addTo(mm);
-activeLabels = labels;
-
-document.getElementById('mapSelect').onchange = function() {
-  if (this.value == 'satellite') {
-    mm.removeLayer(osm);
-    sat.addTo(mm);
-    labels.addTo(mm);
-    activeLabels = labels;
-  } else {
-    mm.removeLayer(sat);
-    mm.removeLayer(labels);
-    activeLabels = null;
-    osm.addTo(mm);
-  }
-};
-
-pts = P.map(function(p) { return [p.lat, p.lng]; });
-pl = L.polyline(pts, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(mm);
-
-var step = Math.max(1, Math.floor(P.length / 30));
-for (var i = 0; i < P.length; i += step) {
-  (function(j) {
-    L.circleMarker([P[j].lat, P[j].lng], {
-      radius: 4, color: '#3b82f6', fill: true,
-      fillColor: '#3b82f6', fillOpacity: 0.8, weight: 1
-    }).addTo(mm).bindTooltip('#' + j).on('click', function() { showInfo(j); });
-  })(i);
-}
-
-function nearestLL(latlng) {
-  var d = Infinity, n = null;
-  for (var i = 0; i < P.length; i++) {
-    var dist = mm.distance(latlng, [P[i].lat, P[i].lng]);
-    if (dist < d) { d = dist; n = i; }
-  }
-  return n;
-}
-
-function showInfo(i) {
-  document.getElementById('selectionInfo').innerHTML =
-    '<div class="text-earth-100 font-semibold">#' + i + '</div>' +
-    '<div>时间: ' + P[i].time + '</div>' +
-    '<div>纬度: ' + P[i].lat.toFixed(6) + '</div>' +
-    '<div>经度: ' + P[i].lng.toFixed(6) + '</div>' +
-    '<div>海拔: ' + P[i].alt + 'm</div>';
-}
-
-pl.on('click', function(e) {
-  var i = nearestLL(e.latlng);
-  if (i != null) showInfo(i);
-});
-
-// ss, se, sm, rv, removedLines declared at global scope
-
-// Restore deletion marks from localStorage on page load
-(function() {
-  var saved = localStorage.getItem('trackEditor_removals');
-  if (saved) {
-    try {
-      rv = JSON.parse(saved);
-      if (rv.length > 0) {
-        document.getElementById('selectionInfo').innerHTML = '<span class="text-amber-400">↻ 已恢复 ' + rv.length + ' 个删除标记</span>';
-        var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
-        document.getElementById('delPts').textContent = del;
-        document.getElementById('finalPts').textContent = P.length - del;
-      }
-    } catch(e) {}
-  }
-})();
-
-
-
-
-clearSel = function() {
-  ss = null; se = null;
-  sm.forEach(function(x) { mm.removeLayer(x); });
-  sm = [];
-}
-
-document.getElementById('btnClear').onclick = clearSel;
-
-
-function updateSel() {
-  sm.forEach(function(x) { mm.removeLayer(x); });
-  sm = [];
-  if (ss != null && se != null) {
-    var s = Math.min(ss, se), e = Math.max(ss, se);
-    var sl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.9}).addTo(mm);
-    sm.push(sl);
-    var sm1 = L.circleMarker([P[s].lat, P[s].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(mm);
-    sm1.bindTooltip('#' + s);
-    sm.push(sm1);
-    var sm2 = L.circleMarker([P[e].lat, P[e].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(mm);
-    sm2.bindTooltip('#' + e);
-    sm.push(sm2);
-    mm.fitBounds(sl.getBounds(), {padding: [30, 30]});
-  } else if (ss != null) {
-    var sm1 = L.circleMarker([P[ss].lat, P[ss].lng], {radius: 8, color: '#f59e0b', fill: true, fillColor: '#f59e0b', fillOpacity: 1, weight: 2}).addTo(mm);
-    sm1.bindTooltip('#' + ss);
-    sm.push(sm1);
-  }
-}
-
-mm.on('click', function(e) {
-  // Always in selection mode
-  var i = nearestLL(e.latlng);
-  if (i == null) return;
-  if (ss == null) {
-    ss = i;
-    showInfo(i);
-  } else if (se == null && ss != null) {
-    if (i == ss) {
-      ss = null;
-      clearSel();
-      updateSelInfo(null, null);
-    } else {
-      se = i;
-      var s = Math.min(ss, se), e = Math.max(ss, se);
-      document.getElementById('selectionInfo').innerHTML = '<div class="text-earth-100 font-semibold">已选中</div>选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
-      updateSelInfo(ss, se);
-    }
-  }
-  updateSel();
-});
-
-
-
-document.getElementById('btnDownload').onclick = function() {
-  var overlay = document.getElementById('overlay');
-  document.getElementById('overlayText').textContent = '正在处理 ' + rv.length + ' 个删除范围...';
-  overlay.style.display = 'flex';
-  fetch('/api/apply-edits', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({removals: rv, totalPts: P.length})
-  }).then(function(r) { return r.json(); }).then(function(data) {
-    document.getElementById('overlayText').textContent = '处理完成，正在下载...';
-    setTimeout(function() {
-      overlay.style.display = 'none';
-      window.location.href = data.downloadUrl || '/download/edited_track.kmz';
-    }, 2000);
-  }).catch(function(e) {
-    overlay.style.display = 'none';
-    var txt = JSON.stringify(rv);
-    alert('请将以下内容复制发送给小满：\n\n' + txt);
-    prompt('发送给小满', txt);
-  });
-};
-
-mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
-
-}  // end initEditor
-
-
-function updateSelInfo(s, e) {
-  var info = document.getElementById('selectionInfo');
-  var btn = document.getElementById('btnConfirmDel');
-  if (s === null || e === null) {
-    info.innerHTML = '<div class="text-earth-500">点选轨迹上的起点和终点</div>';
-    btn.disabled = true;
-    return;
-  }
-  var start = Math.min(s, e), end = Math.max(s, e);
-  var pts_count = end - start + 1;
-  var p1 = P[start], p2 = P[end];
-  info.innerHTML = '<div class="text-earth-100 font-semibold">#' + start + ' \u2192 #' + end + '</div>' +
-    '<div>' + pts_count + ' \u4e2a\u70b9</div>' +
-    '<div class="text-[10px] text-earth-500">\u8d77\u70b9: ' + p1.lat.toFixed(5) + ', ' + p1.lng.toFixed(5) + '</div>' +
-    '<div class="text-[10px] text-earth-500">\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '</div>';
-  btn.disabled = false;
-}
-
-function refreshDelList() {
-  var el = document.getElementById('removalsList');
-  document.getElementById('delListCount').textContent = rv.length + ' \u6bb5';
-  if (rv.length === 0) {
-    el.innerHTML = '<div class="text-earth-500 text-center py-4">\u6682\u65e0\u5220\u9664\u8def\u5f84</div>';
-    return;
-  }
-  var h = '';
-  for (var i = rv.length - 1; i >= 0; i--) {
-    var r = rv[i];
-    var cnt = r.end - r.start + 1;
-    h += '<div class="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-earth-700/50 cursor-pointer transition-colors group" data-idx="' + i + '">' +
-      '<span class="flex-1 text-earth-300 text-[11px]">#' + r.start + '\u2192#' + r.end + ' <span class="text-earth-500">(' + cnt + ')</span></span>' +
-      '<button class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs px-1 transition-opacity" onclick="undoDelete(' + i + ')">\u2715</button>' +
-      '</div>';
-  }
-  el.innerHTML = h;
-  
-  el.querySelectorAll('[data-idx]').forEach(function(div) {
-    div.addEventListener('click', function(e) {
-      if (e.target.tagName === 'BUTTON') return;
-      var idx = parseInt(this.dataset.idx);
-      var r = rv[idx];
-      highlightRange(r.start, r.end);
-    });
-  });
-}
-
-function undoDelete(idx) {
-  var r = rv[idx];
-  rv.splice(idx, 1);
-  localStorage.setItem('trackEditor_removals', JSON.stringify(rv));
-  for (var i = 0; i < removedLines.length; i++) {
-    if (removedLines[i]._delInfo && removedLines[i]._delInfo.start === r.start && removedLines[i]._delInfo.end === r.end) {
-      mm.removeLayer(removedLines[i]);
-      removedLines.splice(i, 1);
-      break;
-    }
-  }
-  var del = rv.reduce(function(a, r2) { return a + r2.end - r2.start + 1; }, 0);
-  document.getElementById('delPts').textContent = del;
-  document.getElementById('finalPts').textContent = P.length - del;
-  refreshDelList();
-}
-
-function highlightRange(s, e) {
-  if (window._hlLine) { mm.removeLayer(window._hlLine); }
-  window._hlLine = L.polyline(pts.slice(s, e + 1), {color: '#fbbf24', weight: 8, opacity: 0.9}).addTo(mm);
-  mm.fitBounds(window._hlLine.getBounds(), {padding: [30, 30]});
-  setTimeout(function() {
-    if (window._hlLine) { mm.removeLayer(window._hlLine); window._hlLine = null; }
-  }, 3000);
-}
-
-// btnConfirmDel handler
-document.getElementById('btnConfirmDel').onclick = function() {
-  if (ss === null || se === null) { return; }
-  var s = Math.min(ss, se), e = Math.max(ss, se);
-  rv.push({start:s, end:e});
-  localStorage.setItem('trackEditor_removals', JSON.stringify(rv));
-  var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
-  document.getElementById('delPts').textContent = del;
-  document.getElementById('finalPts').textContent = P.length - del;
-  var rl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.7}).addTo(mm);
-  removedLines.push(rl);
-  rl._delInfo = {start: s, end: e};
-  updateSelInfo(null, null);
-  clearSel();
-  refreshDelList();
-};
-
-
-// Sidebar resize
-(function(){
-  var handle = document.getElementById('resizeHandle');
-  var panel = document.getElementById('panel');
-  if (!handle || !panel) { /* panel not found */ return; }
-  var isDragging = false;
-  
-  handle.addEventListener('mousedown', function(e) {
-    isDragging = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  });
-  
-  document.addEventListener('mousemove', function(e) {
-    if (!isDragging) return;
-    var width = Math.max(200, Math.min(500, e.clientX));
-    panel.style.width = width + 'px';
-  });
-  
-  document.addEventListener('mouseup', function() {
-    if (isDragging) {
-      isDragging = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      // Trigger map resize
-      if (typeof mm !== 'undefined') {
-        setTimeout(function() { mm.invalidateSize(); }, 50);
-      }
-    }
-  });
-})();
-
-</script></body></html>
+<script src="/editor.js"></script>
+</body>
+</html>
