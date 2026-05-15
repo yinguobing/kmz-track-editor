@@ -128,14 +128,14 @@ select:hover,select:focus{border-color:var(--coral)}
       <div class="section-ops">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <select id="mapSelect" style="flex:1;padding:5px 8px;border-radius:999px;border:1px solid var(--border);background:var(--canvas);color:var(--ink);font-size:11px;outline:none;cursor:pointer">
-            <option value="satellite">&#128147; 卫星</option>
-            <option value="osm">&#127758; 标准</option>
+            <option value="satellite">卫星</option>
+            <option value="osm">标准</option>
           </select>
         </div>
         <div class="section-title" style="margin-bottom:6px"><span class="dot"></span> 操作区</div>
         <div id="selectionInfo" class="sel-info">点选轨迹上的起点和终点</div>
         <div class="btn-group">
-          <button class="btn btn-red" id="btnConfirmDel" disabled>&#128465; 删除</button>
+          <button class="btn btn-red" id="btnConfirmDel" disabled>删除</button>
           <button class="btn btn-gray" id="btnClear" disabled>重置</button>
         </div>
       </div>
@@ -157,8 +157,8 @@ select:hover,select:focus{border-color:var(--coral)}
           <span>最终 <b class="green" id="finalPts">0</b></span>
         </div>
         <div class="btn-group">
-          <button class="btn btn-blue" style="flex:1" onclick="document.getElementById('uploadModal').style.display='flex'">&#128228; 导入</button>
-          <button class="btn btn-green" style="flex:1" id="btnDownload">&#11015; 导出</button>
+          <button class="btn btn-blue" style="flex:1" onclick="document.getElementById('uploadModal').style.display='flex'">导入</button>
+          <button class="btn btn-green" style="flex:1" id="btnDownload">导出</button>
         </div>
       </div></div>
   </div>
