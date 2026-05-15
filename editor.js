@@ -32,7 +32,7 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
 }).catch(function(e){
   console.warn('No track data, upload a KMZ file:', e);
   P=[];
-  document.getElementById('selectionInfo').innerHTML = '<span style="color:var(--text-secondary)">无轨迹数据，请上传 KMZ 文件</span>';
+  document.getElementById('selectionInfo').innerHTML = '<span style="color:var(--body)">无轨迹数据，请上传 KMZ 文件</span>';
 });
 
 // Initialize map (called after data loads)
@@ -69,8 +69,8 @@ var step = Math.max(1, Math.floor(P.length / 30));
 for (var i = 0; i < P.length; i += step) {
   (function(j) {
     L.circleMarker([P[j].lat, P[j].lng], {
-      radius: 4, color: '#3b82f6', fill: true,
-      fillColor: '#3b82f6', fillOpacity: 0.8, weight: 1
+      radius: 4, color: '#458fff', fill: true,
+      fillColor: '#458fff', fillOpacity: 0.8, weight: 1
     }).addTo(mm).bindTooltip('#' + j).on('click', function() { showInfo(j); });
   })(i);
 }
@@ -86,7 +86,7 @@ function nearestLL(latlng) {
 
 function showInfo(i) {
   document.getElementById('selectionInfo').innerHTML =
-    '<div class="section-title" style="font-size:12px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:600">#' + i + '</div>' +
+    '<div class="section-title" style="font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:600">#' + i + '</div>' +
     '<div>时间: ' + P[i].time + '</div>' +
     '<div>纬度: ' + P[i].lat.toFixed(6) + '</div>' +
     '<div>经度: ' + P[i].lng.toFixed(6) + '</div>' +
@@ -166,7 +166,7 @@ mm.on('click', function(e) {
     } else {
       se = i;
       var s = Math.min(ss, se), e = Math.max(ss, se);
-      document.getElementById('selectionInfo').innerHTML = '<div style="color:var(--text);font-weight:600;font-size:12px">已选中</div>选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
+      document.getElementById('selectionInfo').innerHTML = '<div style="color:var(--ink);font-weight:600;font-size:12px">已选中</div>选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
       document.getElementById('btnClear').disabled = false;
       updateSelInfo(ss, se);
     }
@@ -214,7 +214,7 @@ function updateSelInfo(s, e) {
   var start = Math.min(s, e), end = Math.max(s, e);
   var pts_count = end - start + 1;
   var p1 = P[start], p2 = P[end];
-  info.innerHTML = '<div class="section-title" style="font-size:12px;text-transform:none;letter-spacing:0;color:var(--text);font-weight:600">#' + start + ' \u2192 #' + end + '</div>' +
+  info.innerHTML = '<div class="section-title" style="font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:600">#' + start + ' \u2192 #' + end + '</div>' +
     '<div>' + pts_count + ' \u4e2a\u70b9</div>' +
     '<div class="detail-text">\u8d77\u70b9: ' + p1.lat.toFixed(5) + ', ' + p1.lng.toFixed(5) + '</div>' +
     '<div class="detail-text">\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '</div>';
