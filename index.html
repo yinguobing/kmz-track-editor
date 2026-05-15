@@ -115,6 +115,7 @@ var trackName = "两步路轨迹编辑器";
 // Global vars for map state - assigned in initEditor
 var mm, osm, sat, labels, activeLabels, pts, pl;
 var rv = [], ss = null, se = null, sm = [], removedLines = [];
+var clearSel;
 var DATA = [];  // loaded from track_data.json
 
 
@@ -216,7 +217,7 @@ pl.on('click', function(e) {
 
 
 
-function clearSel() {
+clearSel = function() {
   ss = null; se = null;
   sm.forEach(function(x) { mm.removeLayer(x); });
   sm = [];
