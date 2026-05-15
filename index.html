@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head><!--v=1778844373--><meta charset="utf-8"><script>
+<head><!--v=1778844373--><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>两步路轨迹编辑器</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
 tailwind.config = {
   theme: {
     extend: {
@@ -12,9 +15,7 @@ tailwind.config = {
     }
   }
 }
-</script><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>两步路轨迹编辑器</title>
-<script src="https://cdn.tailwindcss.com"></script>
+</script>
 
 <link rel="stylesheet" href="/lib/leaflet.css">
 <script src="/lib/leaflet.js"></script>
@@ -33,7 +34,7 @@ tailwind.config = {
 .leaflet-control-attribution a{color:#10b981 !important}
 .leaflet-control{border:1px solid #334155 !important;border-radius:5px !important;overflow:hidden !important}
 .leaflet-control-zoom{border:none !important}
-#overlay{backdrop-filter:blur(4px)}
+#overlay{display:none;backdrop-filter:blur(4px)}
 </style></head>
 <body class="bg-earth-900 text-earth-100 antialiased">
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
