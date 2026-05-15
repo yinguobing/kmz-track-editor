@@ -178,12 +178,12 @@ function nearestLL(latlng) {
 
 function showInfo(i) {
   document.getElementById('selectionInfo').innerHTML =
-    '<div class="text-earth-100 font-semibold">#' + i + '
-  </div>' +
+    '<div class="text-earth-100 font-semibold">#' + i + '</div>' +
     '<div>时间: ' + P[i].time + '</div>' +
     '<div>纬度: ' + P[i].lat.toFixed(6) + '</div>' +
     '<div>经度: ' + P[i].lng.toFixed(6) + '</div>' +
     '<div>海拔: ' + P[i].alt + 'm</div>';
+}
 }
 
 pl.on('click', function(e) {
