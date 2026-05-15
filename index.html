@@ -6,47 +6,91 @@
 <script src="/lib/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#1a1a2e;color:#fff}
-#map{width:100%;height:100vh}
-#toolbar{position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;gap:8px;padding:6px 10px;background:#16213e;border-bottom:1px solid #0f3460;flex-wrap:wrap}
-#toolbar button{padding:4px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap}
-.toolbar select{padding:3px 6px;border-radius:4px;border:1px solid #0f3460;background:#1a1a2e;color:#fff;font-size:12px}
+body{font-family:-apple-system,sans-serif;background:#1a1a2e;color:#fff;height:100vh;overflow:hidden}
+#app{display:flex;height:100vh;width:100vw}
+#map{flex:1;height:100vh}
+#panel{width:280px;min-width:280px;background:#16213e;border-left:1px solid #0f3460;display:flex;flex-direction:column;overflow-y:auto}
+#panel-header{padding:12px 14px 8px;border-bottom:1px solid #0f3460;font-weight:bold;font-size:14px;display:flex;align-items:center;gap:6px}
+#panel-header .track-icon{font-size:18px}
+#panel-body{padding:10px 14px;flex:1}
+.section{margin-bottom:14px}
+.section-title{font-size:11px;text-transform:uppercase;color:#6b7280;margin-bottom:6px;letter-spacing:1px}
+.btn-group{display:flex;flex-wrap:wrap;gap:5px}
+.btn-group button{flex:1;min-width:60px}
 .btn-green{background:#059669;color:#fff}
 .btn-red{background:#dc2626;color:#fff}
-.btn-gray{background:#4b5563;color:#fff}
+.btn-gray{background:#4b5563;color:#fff;border:1px solid #6b7280}
 .btn-blue{background:#2563eb;color:#fff}
-#status{position:fixed;bottom:10px;left:10px;z-index:1999;background:rgba(22,33,62,0.95);padding:8px 12px;border-radius:6px;font-size:12px;max-width:340px;border:1px solid #0f3460;line-height:1.5}
+.btn-purple{background:#7c3aed;color:#fff}
+button{padding:6px 10px;border:none;border-radius:5px;cursor:pointer;font-size:12px;white-space:nowrap;font-weight:600}
+button:hover{filter:brightness(1.15)}
+button:active{transform:translateY(1px)}
+select{padding:5px 8px;border-radius:5px;border:1px solid #0f3460;background:#1a1a2e;color:#fff;font-size:12px;width:100%;cursor:pointer}
+label.checkbox{display:flex;align-items:center;gap:6px;font-size:12px;color:#d1d5db;cursor:pointer;padding:4px 0}
+.stats{font-size:12px;color:#9ca3af;line-height:1.8;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px 10px}
+.stats b{color:#fff}
+.stats .red{color:#fca5a5}
+.stats .green{color:#22c55e}
+#status{font-size:12px;line-height:1.6;background:rgba(0,0,0,0.2);border-radius:6px;padding:8px 10px;margin-bottom:10px;max-height:120px;overflow-y:auto}
+#removalsList{font-size:11px;max-height:200px;overflow-y:auto;display:none}
+#removalsList div{padding:2px 4px;color:#fca5a5;border-bottom:1px solid rgba(255,255,255,0.05)}
+#removalsList .header{color:#6b7280;font-size:10px;text-transform:uppercase;padding:4px 4px 2px;border-bottom:1px solid #0f3460}
 #overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:3000;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-size:18px}
 #overlay .spinner{width:40px;height:40px;border:4px solid #374151;border-top:4px solid #22c55e;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
 @keyframes spin{to{transform:rotate(360deg)}}
-#removalsList{position:fixed;top:50px;right:10px;z-index:1999;background:rgba(22,33,62,0.95);padding:8px;border-radius:6px;font-size:11px;min-width:200px;border:1px solid #0f3460;display:none;max-height:300px;overflow-y:auto}
-#removalsList div{padding:2px 0;color:#fca5a5}
-.stats{font-size:11px;color:#9ca3af}
-.stats b{color:#fff}
-.stats .red{color:#fca5a5}
 </style></head>
 <body>
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
-<div id="toolbar">
-  <span style="font-weight:bold;font-size:13px">&#9998; 青见梁穿越线</span>
-  <select class="toolbar" id="mapSelect">
-    <option value="satellite">&#128147; 卫星地图</option>
-    <option value="osm">&#127758; 标准地图</option>
-  </select>
-  <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;color:#d1d5db">
-    <input type="checkbox" id="modeSel"> 选择模式
-  </label>
-  <button class="btn-red" id="btnDel">&#128465; 删除范围</button>
-  <button class="btn-gray" id="btnClear">清除选区</button>
-  <button class="btn-red" id="btnClearAll" style="background:#b91c1c">✕ 清空标记</button>
-  <button class="btn-blue" id="btnShow">&#128196; 列表</button>
-  <a href="/upload" style="text-decoration:none"><button class="btn-blue" style="background:#7c3aed">📤 上传 KMZ</button></a>
-  <button class="btn-green" id="btnDownload">&#11015; 下载 KMZ</button>
-  <span class="stats" style="margin-left:auto">总 <b id="totalPts">3245</b> | 已删 <b class="red" id="delPts">0</b> | 最终 <b id="finalPts">3373</b></span>
+<div id="app">
+  <div id="map"></div>
+  <div id="panel">
+    <div id="panel-header">
+      <span class="track-icon">&#9998;</span> <span id="trackNameDisplay">青见梁穿越线</span>
+    </div>
+    <div id="panel-body">
+      <div class="section">
+        <div class="section-title">底图</div>
+        <select id="mapSelect">
+          <option value="satellite">&#128147; 卫星地图</option>
+          <option value="osm">&#127758; 标准地图</option>
+        </select>
+      </div>
+      <div class="section">
+        <div class="section-title">选择与标记</div>
+        <label class="checkbox"><input type="checkbox" id="modeSel"> 选择模式（点选轨迹起点/终点）</label>
+        <div class="btn-group" style="margin-top:6px">
+          <button class="btn-red" id="btnDel">&#128465; 删除范围</button>
+          <button class="btn-gray" id="btnClear">清除选区</button>
+        </div>
+        <button class="btn-red" id="btnClearAll" style="background:#b91c1c;margin-top:4px;width:100%">✕ 清空所有删除标记</button>
+      </div>
+      <div class="section">
+        <div class="section-title">操作</div>
+        <div class="btn-group">
+          <button class="btn-blue" id="btnShow">&#128196; 删除列表</button>
+          <a href="/upload" style="flex:1;text-decoration:none"><button class="btn-purple" style="width:100%">📤 上传 KMZ</button></a>
+        </div>
+        <button class="btn-green" id="btnDownload" style="margin-top:5px;width:100%;padding:8px">&#11015; 下载 KMZ</button>
+      </div>
+      <div class="section">
+        <div class="section-title">统计</div>
+        <div class="stats">
+          总点数 <b id="totalPts">3245</b><br>
+          已标记删除 <b class="red" id="delPts">0</b><br>
+          最终点数 <b class="green" id="finalPts">3245</b>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">状态</div>
+        <div id="status"><b>青见梁穿越线</b><br>点击轨迹看详情。勾选「选择模式」后点选起点/终点。</div>
+      </div>
+      <div class="section">
+        <div class="section-title">待删除范围</div>
+        <div id="removalsList"></div>
+      </div>
+    </div>
+  </div>
 </div>
-<div id="map" style="margin-top:40px;height:calc(100vh - 40px)"></div>
-<div id="status"><b id="trackNameDisplay">青见梁穿越线</b><br>点击轨迹看详情。勾选「选择模式」后点选起点/终点。</div>
-<div id="removalsList"></div>
 
 <script>
 var trackName = "青见梁穿越线";
@@ -3301,7 +3345,7 @@ var P = DATA.map(function(d) {
   return {idx: d[0], lat: d[1], lng: d[2], alt: d[3], time: d[4]};
 });
 
-var mm = L.map('map', {zoomControl: true, maxZoom: 20}).setView([38.972362000000004, 112.4864345], 12);
+var mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
 
 var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
 var sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
