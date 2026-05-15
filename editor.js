@@ -137,10 +137,8 @@ clearSel = function() {
   sm.forEach(function(x) { mm.removeLayer(x); });
   sm = [];
   updateSelInfo(null, null);
-  document.getElementById('btnClear').disabled = true;
-}
+  }
 
-document.getElementById('btnClear').onclick = clearSel;
 
 
 function updateSel() {
@@ -183,8 +181,7 @@ mm.on('click', function(e) {
       se = i;
       var s = Math.min(ss, se), e = Math.max(ss, se);
       // Range info shown on map via updateSelInfo + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
-      document.getElementById('btnClear').disabled = false;
-      updateSelInfo(ss, se);
+            updateSelInfo(ss, se);
     }
   }
   updateSel();
@@ -221,13 +218,11 @@ mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
 
 function updateSelInfo(s, e) {
   if (s === null || e === null) {
-    document.getElementById('btnConfirmDel').disabled = true;
     return;
   }
   var st = Math.min(s, e), en = Math.max(s, e);
   var cnt = en - st + 1;
   var p1 = P[st], p2 = P[en];
-  document.getElementById('btnConfirmDel').disabled = false;
   var mlat = (p1.lat + p2.lat) / 2;
   var mlng = (p1.lng + p2.lng) / 2;
   var html = '<div style="font-size:12px;line-height:1.6">' +
@@ -312,8 +307,6 @@ function confirmDelete() {
   refreshDelList();
 }
 
-// btnConfirmDel handler (from sidebar)
-document.getElementById('btnConfirmDel').onclick = confirmDelete;
 
 
 
