@@ -7,7 +7,7 @@ function updateStatsWithLocalStorage() {
         var d = rv.reduce(function(a,r){return a+r.end-r.start+1}, 0);
         document.getElementById("delPts").textContent = d;
         document.getElementById("finalPts").textContent = P.length - d;
-        document.getElementById("selectionInfo").innerHTML = "<span style=\"color:var(--amber)\">已从缓存恢复 " + rv.length + " 个删除标记</span>";
+        
       }
     } catch(e) {}
   }
@@ -32,7 +32,7 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
 }).catch(function(e){
   console.warn('No track data, upload a KMZ file:', e);
   P=[];
-  document.getElementById('selectionInfo').innerHTML = '<span style="color:var(--body)">无轨迹数据，请上传 KMZ 文件</span>';
+  
 });
 
 // Initialize map (called after data loads)
@@ -107,7 +107,7 @@ pl.on('click', function(e) {
     try {
       rv = JSON.parse(saved);
       if (rv.length > 0) {
-        document.getElementById('selectionInfo').innerHTML = '<span style="color:var(--amber)">↻ 已恢复 ' + rv.length + ' 个删除标记</span>';
+        
         var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
         document.getElementById('delPts').textContent = del;
         document.getElementById('finalPts').textContent = P.length - del;
@@ -166,7 +166,7 @@ mm.on('click', function(e) {
     } else {
       se = i;
       var s = Math.min(ss, se), e = Math.max(ss, se);
-      document.getElementById('selectionInfo').innerHTML = '<div style="color:var(--ink);font-weight:600;font-size:12px">已选中</div>选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
+      // Range info shown on map via updateSelInfo + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
       document.getElementById('btnClear').disabled = false;
       updateSelInfo(ss, se);
     }
