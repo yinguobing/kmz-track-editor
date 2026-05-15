@@ -121,7 +121,6 @@ var P = [];
 fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
   DATA = d;
   P = DATA.map(function(d){return{idx:d[0],lat:d[1],lng:d[2],alt:d[3],time:d[4]};});
-  rebuildMap();
   updateStatsWithLocalStorage();
 }).catch(function(e){
   console.warn('No track data, upload a KMZ file:', e);
@@ -129,8 +128,10 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
   rebuildMap();
 });
 
-function rebuildMap() {
-  if (P.length === 0) { document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>'; return; }
+// Guard: no data
+if (P.length === 0) { document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>'; return; }
+
+// Initialize map
 var mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
 
 var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
@@ -183,7 +184,6 @@ function showInfo(i) {
     '<div>纬度: ' + P[i].lat.toFixed(6) + '</div>' +
     '<div>经度: ' + P[i].lng.toFixed(6) + '</div>' +
     '<div>海拔: ' + P[i].alt + 'm</div>';
-}
 }
 
 pl.on('click', function(e) {
@@ -288,8 +288,7 @@ document.getElementById('btnDownload').onclick = function() {
   });
 };
 
-mm.fitBounds(pl.getBounds(), {padding: [30, 30]})
-};
+mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
 
 function updateSelInfo(s, e) {
   var info = document.getElementById('selectionInfo');
