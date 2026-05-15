@@ -1,279 +1,87 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head><!--v=1778844373--><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<head><!--v=1778844373--><meta charset="utf-8"><script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        forest: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' },
+        earth: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
+        sunset: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' }
+      }
+    }
+  }
+}
+</script><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>两步路轨迹编辑器</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
 <link rel="stylesheet" href="/lib/leaflet.css">
 <script src="/lib/leaflet.js"></script>
-<style>/* ===== 山野风 · 两步路轨迹编辑器 ===== */
-*{margin:0;padding:0;box-sizing:border-box}
-
-:root {
-  --bg-deep: #0f172a;       /* 深空 */
-  --bg-surface: #1e293b;    /* 山岩 */
-  --bg-card: #1e293b;       /* 卡片底 */
-  --bg-hover: #334155;      /* 悬停 */
-  --border: #334155;        /* 边框 */
-  --border-light: #475569;
-  --text-primary: #f1f5f9;  /* 主文字 */
-  --text-secondary: #94a3b8;/* 辅文字 */
-  --text-muted: #64748b;    /* 弱文字 */
-  --green: #059669;         /* 翠绿 - 山林 */
-  --green-hover: #047857;
-  --green-bg: rgba(5,150,105,0.12);
-  --amber: #f59e0b;         /* 琥珀 - 晚霞 */
-  --amber-bg: rgba(245,158,11,0.12);
-  --red: #ef4444;           /* 赤红 - 红枫 */
-  --red-hover: #dc2626;
-  --red-bg: rgba(239,68,68,0.12);
-  --blue: #3b82f6;          /* 晴空 */
-  --blue-bg: rgba(59,130,246,0.12);
-  --purple: #7c3aed;        /* 紫霞 */
-  --radius: 8px;
-  --radius-sm: 5px;
-}
-
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
-  background:var(--bg-deep);color:var(--text-primary);
-  height:100vh;overflow:hidden;
-  -webkit-font-smoothing:antialiased
-}
-
-#app{display:flex;height:100vh;width:100vw}
-
-/* ---- 地图区域 ---- */
+<style>
+/* Minimal overrides for Leaflet and custom behavior */
 #map{flex:1;height:100vh}
-
-/* ---- 侧边栏 ---- */
-#panel{
-  width:290px;min-width:290px;
-  background:var(--bg-surface);
-  border-left:1px solid var(--border);
-  display:flex;flex-direction:column;
-  overflow-y:auto
-}
 #panel::-webkit-scrollbar{width:5px}
 #panel::-webkit-scrollbar-track{background:transparent}
-#panel::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
-#panel::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
-
-#panel-header{
-  padding:14px 16px 10px;
-  border-bottom:1px solid var(--border);
-  font-weight:700;font-size:15px;
-  display:flex;align-items:center;gap:8px;
-  background:linear-gradient(135deg, rgba(5,150,105,0.08) 0%, transparent 60%);
-  letter-spacing:0.3px;
-  color:var(--green)
-}
-#panel-header .track-icon{font-size:20px}
-
-#panel-body{padding:12px 14px;flex:1}
-
-/* ---- 功能卡片 ---- */
-.card{
-  background:var(--bg-card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:10px 12px;
-  margin-bottom:10px
-}
-.card-title{
-  font-size:10px;font-weight:600;
-  text-transform:uppercase;letter-spacing:1.2px;
-  color:var(--text-muted);
-  margin-bottom:8px;
-  display:flex;align-items:center;gap:5px
-}
-.card-title .dot{
-  display:inline-block;width:6px;height:6px;
-  border-radius:50%;background:var(--green)
-}
-
-/* ---- 表单控件 ---- */
-select{
-  padding:6px 10px;border-radius:var(--radius-sm);
-  border:1px solid var(--border);
-  background:var(--bg-deep);color:var(--text-primary);
-  font-size:12px;width:100%;cursor:pointer;
-  outline:none;transition:border-color 0.15s
-}
-select:hover,select:focus{border-color:var(--green)}
-
-label.checkbox{
-  display:flex;align-items:center;gap:7px;
-  font-size:12px;color:var(--text-secondary);
-  cursor:pointer;padding:5px 0;
-  user-select:none
-}
-label.checkbox input[type=checkbox]{
-  accent-color:var(--green);width:15px;height:15px;cursor:pointer
-}
-
-/* ---- 按钮 ---- */
-button{
-  padding:6px 12px;border:none;border-radius:var(--radius-sm);
-  cursor:pointer;font-size:12px;font-weight:600;
-  white-space:nowrap;transition:all 0.15s ease;
-  outline:none;
-  letter-spacing:0.2px
-}
-button:active{transform:translateY(1px)}
-button:disabled{opacity:0.5;cursor:not-allowed}
-
-.btn-green{background:var(--green);color:#fff}
-.btn-green:hover{background:var(--green-hover);box-shadow:0 0 12px rgba(5,150,105,0.3)}
-
-.btn-red{background:var(--red);color:#fff}
-.btn-red:hover{background:var(--red-hover);box-shadow:0 0 12px rgba(239,68,68,0.25)}
-
-.btn-gray{background:var(--bg-hover);color:var(--text-primary);border:1px solid var(--border)}
-.btn-gray:hover{background:var(--border-light)}
-
-.btn-blue{background:var(--blue);color:#fff}
-.btn-blue:hover{box-shadow:0 0 12px rgba(59,130,246,0.25)}
-
-.btn-purple{background:var(--purple);color:#fff}
-.btn-purple:hover{box-shadow:0 0 12px rgba(124,58,237,0.25)}
-
-.btn-group{display:flex;flex-wrap:wrap;gap:5px}
-.btn-group button{flex:1;min-width:55px}
-
-/* ---- 统计信息 ---- */
-.stats{
-  font-size:12px;color:var(--text-secondary);line-height:1.9;
-  background:rgba(0,0,0,0.15);border-radius:var(--radius-sm);
-  padding:8px 10px
-}
-.stats b{color:var(--text-primary)}
-.stats .red{color:var(--red)}
-.stats .green{color:var(--green)}
-
-/* ---- 状态信息 ---- */
-#status{
-  font-size:12px;line-height:1.6;
-  background:rgba(0,0,0,0.15);
-  border-radius:var(--radius-sm);
-  padding:8px 10px;
-  max-height:120px;overflow-y:auto;
-  color:var(--text-secondary)
-}
-#status b{color:var(--text-primary)}
-
-/* ---- 待删除列表 ---- */
-#removalsList{
-  font-size:11px;max-height:200px;overflow-y:auto;
-  display:none
-}
+#panel::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
 #removalsList::-webkit-scrollbar{width:4px}
-#removalsList::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}
-#removalsList div{
-  padding:3px 6px;color:#fca5a5;
-  border-bottom:1px solid rgba(255,255,255,0.04);
-  font-size:11px
-}
-#removalsList div:last-child{border-bottom:none}
-#removalsList .header{
-  color:var(--text-muted);font-size:10px;
-  text-transform:uppercase;letter-spacing:1px;
-  padding:3px 6px 4px;
-  border-bottom:1px solid var(--border);
-  margin-bottom:2px
-}
-
-/* ---- 覆盖层 ---- */
-#overlay{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  z-index:3000;background:rgba(15,23,42,0.7);
-  backdrop-filter:blur(4px);
-  display:none;align-items:center;justify-content:center;
-  flex-direction:column;color:#fff;font-size:16px
-}
-#overlay .spinner{
-  width:36px;height:36px;
-  border:3px solid rgba(255,255,255,0.15);
-  border-top:3px solid var(--green);
-  border-radius:50%;
-  animation:spin 0.8s linear infinite;
-  margin-bottom:14px
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ---- Leaflet 控件风格覆盖 ---- */
-.leaflet-control-zoom a{
-  background:var(--bg-surface) !important;
-  color:var(--text-primary) !important;
-  border-color:var(--border) !important;
-  font-weight:bold !important;
-  transition:background 0.15s !important
-}
-.leaflet-control-zoom a:hover{
-  background:var(--bg-hover) !important
-}
-.leaflet-control-attribution{
-  background:rgba(30,41,59,0.85) !important;
-  color:var(--text-muted) !important;
-  font-size:10px !important;
-  padding:2px 6px !important
-}
-.leaflet-control-attribution a{
-  color:var(--green) !important
-}
-.leaflet-control{
-  border:1px solid var(--border) !important;
-  border-radius:var(--radius-sm) !important;
-  overflow:hidden !important
-}
-.leaflet-control-zoom{
-  border:none !important
-}</style></head>
-<body>
+#removalsList::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}
+#status{max-height:120px;overflow-y:auto}
+.leaflet-control-zoom a{background:#1e293b !important;color:#f1f5f9 !important;border-color:#334155 !important}
+.leaflet-control-zoom a:hover{background:#334155 !important}
+.leaflet-control-attribution{background:rgba(30,41,59,0.85) !important;color:#94a3b8 !important;font-size:10px !important;padding:2px 6px !important}
+.leaflet-control-attribution a{color:#10b981 !important}
+.leaflet-control{border:1px solid #334155 !important;border-radius:5px !important;overflow:hidden !important}
+.leaflet-control-zoom{border:none !important}
+#overlay{backdrop-filter:blur(4px)}
+</style></head>
+<body class="bg-earth-900 text-earth-100 antialiased">
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
-<div id="app">
+<div id="app" class="flex h-screen w-screen">
   <div id="map"></div>
-  <div id="panel">
-    <div id="panel-header">
+  <div id="panel" class="w-[290px] min-w-[290px] bg-earth-800 border-l border-earth-700 flex flex-col overflow-y-auto">
+    <div id="panel-header" class="px-4 py-3 border-b border-earth-700 font-bold text-base flex items-center gap-2 bg-gradient-to-r from-forest-900/30 to-transparent text-forest-400">
       <span class="track-icon">&#9998;</span> <span>两步路轨迹编辑器</span>
     </div>
-    <div id="panel-body">
-      <div class="card">
-        <div class="card-title"><span class="dot"></span> 底图</div>
-        <select id="mapSelect">
+    <div id="panel-body" class="p-3 flex-1 space-y-2.5">
+      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 底图</div>
+        <select id="mapSelect" class="w-full px-2.5 py-1.5 rounded bg-earth-900 border border-earth-600 text-earth-100 text-xs outline-none focus:border-forest-500 transition-colors cursor-pointer">
           <option value="satellite">&#128147; 卫星地图</option>
           <option value="osm">&#127758; 标准地图</option>
         </select>
       </div>
-      <div class="card">
-        <div class="card-title"><span class="dot"></span> 选择与标记</div>
-        <label class="checkbox"><input type="checkbox" id="modeSel"> 选择模式（点选轨迹起点/终点）</label>
+      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 选择与标记</div>
+        <label class="flex items-center gap-1.5 text-xs text-earth-300 cursor-pointer py-1 select-none"><input type="checkbox" id="modeSel" class="accent-forest-500 w-3.5 h-3.5 cursor-pointer"> 选择模式（点选轨迹起点/终点）</label>
         <div class="btn-group" style="margin-top:6px">
-          <button class="btn-red" id="btnDel">&#128465; 删除范围</button>
-          <button class="btn-gray" id="btnClear">清除选区</button>
+          <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnDel">&#128465; 删除范围</button>
+          <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all active:translate-y-px" id="btnClear">清除选区</button>
         </div>
-        <button class="btn-red" id="btnClearAll" style="background:#b91c1c;margin-top:4px;width:100%">✕ 清空所有删除标记</button>
+        <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnClearAll" style="background:#b91c1c;margin-top:4px;width:100%">✕ 清空所有删除标记</button>
       </div>
-      <div class="card">
-        <div class="card-title"><span class="dot"></span> 操作</div>
+      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 操作</div>
         <div class="btn-group">
-          <button class="btn-blue" id="btnShow">&#128196; 删除列表</button>
-          <a href="/upload" style="flex:1;text-decoration:none"><button class="btn-purple" style="width:100%">📤 上传 KMZ</button></a>
+          <button class="bg-blue-600 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnShow">&#128196; 删除列表</button>
+          <a href="/upload" style="flex:1;text-decoration:none"><button class="bg-purple-600 hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" style="width:100%">📤 上传 KMZ</button></a>
         </div>
-        <button class="btn-green" id="btnDownload" style="margin-top:5px;width:100%;padding:8px">&#11015; 下载 KMZ</button>
+        <button class="bg-forest-600 hover:bg-forest-500 hover:shadow-lg hover:shadow-forest-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnDownload" w-full mt-1 py-2>&#11015; 下载 KMZ</button>
       </div>
-      <div class="card">
-        <div class="card-title"><span class="dot"></span> 统计</div>
-        <div class="stats">
+      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 统计</div>
+        <div class="text-xs text-earth-400 leading-relaxed bg-black/15 rounded p-2">
           总点数 <b id="totalPts">3245</b><br>
           已标记删除 <b class="red" id="delPts">0</b><br>
           最终点数 <b class="green" id="finalPts">3245</b>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title"><span class="dot"></span> 状态</div>
-        <div id="status"><b>青见梁穿越线</b><br>点击轨迹看详情。勾选「选择模式」后点选起点/终点。</div>
+      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 状态</div>
+        <div id="status" class="text-xs leading-relaxed bg-black/15 rounded p-2 text-earth-400"><b>青见梁穿越线</b><br>点击轨迹看详情。勾选「选择模式」后点选起点/终点。</div>
       </div>
-      <div class="card">
-        <div class="card-title"><span class="dot"></span> 待删除范围</div>
+      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 待删除范围</div>
         <div id="removalsList"></div>
       </div>
     </div>
@@ -479,7 +287,7 @@ document.getElementById('btnShow').onclick = function() {
   }
   if (!h) h = '<div style="color:#6b7280">暂无删除记录</div>';
   el.innerHTML = '<b>待删除范围</b>' + h +
-    '<button class="btn-gray" id="closeRemovalBtn" style="margin-top:4px;width:100%;padding:2px 0;font-size:11px">关闭</button>';
+    '<button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all active:translate-y-px" id="closeRemovalBtn" style="margin-top:4px;width:100%;padding:2px 0;font-size:11px">关闭</button>';
   document.getElementById('closeRemovalBtn').onclick = function() { el.style.display = 'none'; };
   el.style.display = 'block';
 };
