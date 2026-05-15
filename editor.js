@@ -123,6 +123,7 @@ clearSel = function() {
   ss = null; se = null;
   sm.forEach(function(x) { mm.removeLayer(x); });
   sm = [];
+  updateSelInfo(null, null);
 }
 
 document.getElementById('btnClear').onclick = clearSel;
