@@ -90,7 +90,8 @@ tailwind.config = {
       </div>
     </div>
   
-  <div id="resizeHandle" style="position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent"></div></div>
+  <div id="resizeHandle" style="position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent"></div>
+  </div>
 </div>
 
 <script>
@@ -178,7 +179,7 @@ function nearestLL(latlng) {
 function showInfo(i) {
   document.getElementById('selectionInfo').innerHTML =
     '<div class="text-earth-100 font-semibold">#' + i + '
-  <div id="resizeHandle" style="position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent"></div></div>' +
+  </div>' +
     '<div>时间: ' + P[i].time + '</div>' +
     '<div>纬度: ' + P[i].lat.toFixed(6) + '</div>' +
     '<div>经度: ' + P[i].lng.toFixed(6) + '</div>' +
