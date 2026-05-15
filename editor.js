@@ -185,7 +185,7 @@ document.getElementById('btnDownload').onclick = function() {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({removals: rv, totalPts: P.length})
   }).then(function(r) { return r.json(); }).then(function(data) {
-    document.getElementById('overlayText').textContent = '处理完成，正在下载...';
+    document.getElementById('overlayText').textContent = '处理完成，正在导出...';
     setTimeout(function() {
       overlay.style.display = 'none';
       window.location.href = data.downloadUrl || '/download/edited_track.kmz';

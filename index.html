@@ -122,7 +122,7 @@ select:hover,select:focus{border-color:var(--green)}
       <!-- Section 2: 项目配置 -->
       <div class="section">
         <div class="section-title"><span class="dot"></span> 项目配置</div>
-        <button class="btn btn-purple btn-full" style="margin-bottom:8px" onclick="document.getElementById('uploadModal').style.display='flex'">📤 导入 KMZ</button>
+        <button class="btn btn-purple btn-full" style="margin-bottom:8px" onclick="document.getElementById('uploadModal').style.display='flex'">📤 导入</button>
         <select id="mapSelect">
           <option value="satellite">🛰️ 卫星地图</option>
           <option value="osm">🗺️ 标准地图</option>
@@ -134,8 +134,8 @@ select:hover,select:focus{border-color:var(--green)}
         <div class="section-title"><span class="dot"></span> 操作区</div>
         <div id="selectionInfo" class="sel-info">点选轨迹上的起点和终点</div>
         <div class="btn-group">
-          <button class="btn btn-red" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
-          <button class="btn btn-gray" id="btnClear" disabled>清除</button>
+          <button class="btn btn-red" id="btnConfirmDel" disabled>&#128465; 删除</button>
+          <button class="btn btn-gray" id="btnClear" disabled>重置</button>
         </div>
       </div>
       
@@ -156,7 +156,7 @@ select:hover,select:focus{border-color:var(--green)}
           <span>已删 <b class="red" id="delPts">0</b></span>
           <span>最终 <b class="green" id="finalPts">0</b></span>
         </div>
-        <button class="btn btn-green btn-full" id="btnDownload">&#11015; 下载 KMZ</button>
+        <button class="btn btn-green btn-full" id="btnDownload">&#11015; 导出</button>
       </div>
     </div></div>
   </div>
