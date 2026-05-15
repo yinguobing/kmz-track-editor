@@ -54,7 +54,7 @@ tailwind.config = {
       <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
         <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 选择与标记</div>
         <label class="flex items-center gap-1.5 text-xs text-earth-300 cursor-pointer py-1 select-none"><input type="checkbox" id="modeSel" class="accent-forest-500 w-3.5 h-3.5 cursor-pointer"> 选择模式（点选轨迹起点/终点）</label>
-        <div class="btn-group" style="margin-top:6px">
+        <div class="flex flex-wrap gap-1 mt-1.5">
           <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnDel">&#128465; 删除范围</button>
           <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all active:translate-y-px" id="btnClear">清除选区</button>
         </div>
@@ -62,11 +62,11 @@ tailwind.config = {
       </div>
       <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
         <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 操作</div>
-        <div class="btn-group">
+        <div class="flex flex-wrap gap-1">
           <button class="bg-blue-600 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnShow">&#128196; 删除列表</button>
-          <a href="/upload" style="flex:1;text-decoration:none"><button class="bg-purple-600 hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" style="width:100%">📤 上传 KMZ</button></a>
+          <a href="/upload" style="flex:1;text-decoration:none"><button class="bg-purple-600 hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs w-full transition-all active:translate-y-px">📤 上传 KMZ</button></a>
         </div>
-        <button class="bg-forest-600 hover:bg-forest-500 hover:shadow-lg hover:shadow-forest-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnDownload" w-full mt-1 py-2>&#11015; 下载 KMZ</button>
+        <button class="bg-forest-600 hover:bg-forest-500 hover:shadow-lg hover:shadow-forest-500/20 text-white font-semibold rounded px-3 py-2 text-xs w-full mt-1 transition-all active:translate-y-px" id="btnDownload">&#11015; 下载 KMZ</button>
       </div>
       <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
         <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 统计</div>
