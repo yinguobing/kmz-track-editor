@@ -19,8 +19,8 @@ MIME = {
 import shutil, tempfile, re
 ORIG_KMZ = '/home/yinjie/下载/20260514_103430.kmz'
 
-def rebuild_from_kmz(kmz_path):
-    """Extract track data from a KMZ and rebuild editor HTML."""
+def rebuild_from_kmz(kmz_path, orig_filename=None):
+    """Extract track data from KMZ and save as track_data.json. No HTML patching needed."""
     import zipfile
     try:
         with zipfile.ZipFile(kmz_path, 'r') as z:
@@ -30,17 +30,16 @@ def rebuild_from_kmz(kmz_path):
     except:
         return None
     
-    # Extract all gx:Track segments
-    ns = 'http://www.opengis.net/kml/2.2'
-    gx_ns = 'http://www.google.com/kml/ext/2.2'
+    # Find track name
+    name_match = re.search(r'<name>(.*?)</name>', kml)
+    track_name = name_match.group(1).strip() if name_match else '未命名轨迹'
     
-    # Parse with regex (faster for big files)
+    # Extract all gx:coord and when pairs
+    # Handle two formats: alternating when/coord and block format (all whens then all coords)
     tracks = re.findall(r'<gx:Track>.*?</gx:Track>', kml, re.DOTALL)
     if not tracks:
-        # Try gx:coord outside gx:Track
         return None
     
-    # Build flat list of all points
     points = []
     idx = 0
     for track in tracks:
@@ -51,40 +50,17 @@ def rebuild_from_kmz(kmz_path):
             parts = coords[i].strip().split()
             if len(parts) >= 2:
                 lng, lat = parts[0], parts[1]
-                alt = parts[2] if len(parts) > 2 else '0'
-                time_str = whens[i]
-                points.append(f',[{idx}, {lat}, {lng}, {alt}, "{time_str}"]')
+                alt = float(parts[2]) if len(parts) > 2 else 0.0
+                points.append([idx, float(lat), float(lng), alt, whens[i]])
                 idx += 1
     
     if not points:
         return None
     
-    data_str = '\n'.join(points)
-    total = len(points)
-    
-    # Read current index.html and replace DATA
-    index_path = os.path.join(DIR, 'index.html')
-    with open(index_path, 'r', encoding='utf-8') as f:
-        html = f.read()
-    
-    # Find and replace the DATA array
-    new_data = f'var DATA = [{data_str}];'
-    html = re.sub(
-        r'var DATA = \[.*?\];',
-        new_data,
-        html,
-        flags=re.DOTALL
-    )
-    
-    # Update total points display
-    html = re.sub(
-        r'id="totalPts">\d+<',
-        f'id="totalPts">{total}<',
-        html
-    )
-    
-    with open(index_path, 'w', encoding='utf-8') as f:
-        f.write(html)
+    # Save as JSON
+    json_path = os.path.join(DIR, 'track_data.json')
+    with open(json_path, 'w') as f:
+        json.dump(points, f)
     
     # Also copy the uploaded KMZ as new original
     shutil.copy2(kmz_path, ORIG_KMZ)
@@ -95,20 +71,25 @@ def rebuild_from_kmz(kmz_path):
         if os.path.exists(fpath):
             os.remove(fpath)
     
-    # Find track name from KML
-    name_match = re.search(r'<name>(.*?)</name>', kml)
-    track_name = name_match.group(1).strip() if name_match else '未命名轨迹'
+    # Save original filename for download naming
+    meta_path = os.path.join(DIR, 'upload_meta.json')
+    save_name = orig_filename or os.path.basename(kmz_path)
+    with open(meta_path, 'w') as f:
+        json.dump({'name': save_name}, f)
     
-    # Also update the title and name in the HTML
-    html = re.sub(
-        r'青见梁穿越线',
-        track_name,
-        html
-    )
-    with open(index_path, 'w', encoding='utf-8') as f:
-        f.write(html)
-    
-    return f'已加载 "{track_name}"（{total} 个轨迹点）'
+    return '已加载 "' + track_name + '"（' + str(len(points)) + ' 个轨迹点）'
+
+def get_orig_filename():
+    '''Get the original uploaded KMZ filename from saved metadata.'''
+    meta_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'upload_meta.json')
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+            return meta.get('name', 'edited_track.kmz')
+        except:
+            pass
+    return 'edited_track.kmz'
 
 class Handler(BaseHTTPRequestHandler):
 
@@ -153,13 +134,22 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(400, {'success': False, 'error': '请选择 KMZ 文件'})
                 return
             
+            # Extract original filename from multipart headers
+            orig_name = 'uploaded.kmz'
+            for part in parts:
+                if b'filename=' in part:
+                    fn_match = re.search(b'filename="([^"]*)"', part)
+                    if fn_match:
+                        orig_name = fn_match.group(1).decode('utf-8', errors='replace')
+                        break
+            
             # Save to temp file
             tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.kmz', dir=DIR)
             tmp.write(kmz_data)
             tmp.close()
             tmp_path = tmp.name
             
-            proc_result = rebuild_from_kmz(tmp_path)
+            proc_result = rebuild_from_kmz(tmp_path, orig_name)
             os.unlink(tmp_path)
             
             if proc_result:
@@ -194,7 +184,8 @@ class Handler(BaseHTTPRequestHandler):
             info = {
                 'removals': removals,
                 'totalPts': total_pts,
-                'timestamp': time.time()
+                'timestamp': time.time(),
+                'origFilename': get_orig_filename()
             }
             with open(os.path.join(DIR, 'pending_edits.json'), 'w') as f:
                 json.dump(info, f)
@@ -213,7 +204,7 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 'success': True,
                 'message': '编辑已提交，请稍后点击下载按钮',
-                'downloadUrl': '/download/edited_track_v2.kmz',
+                'downloadUrl': '/download/' + get_orig_filename().replace('.kmz', '_edited.kmz'),
                 'ready': False
             }).encode())
         except Exception as e:

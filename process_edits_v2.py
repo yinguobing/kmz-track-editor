@@ -122,6 +122,17 @@ def main():
     with zipfile.ZipFile(ORIG_KMZ, 'r') as z:
         orig_kml = z.read('doc.kml').decode('utf-8')
     
+    # Auto-fix missing namespace declarations
+    ns_fixes = {
+        'xmlns:atom': 'http://www.w3.org/2005/Atom',
+        'xmlns:ns1': 'http://www.w3.org/2005/Atom',
+    }
+    for prefix, ns_url in ns_fixes.items():
+        if prefix not in orig_kml:
+            # Find the kml tag and add the declaration
+            import re as _r
+            orig_kml = orig_kml.replace('<kml ', f'<kml {prefix}="{ns_url}" ')
+    
     # Get segment boundaries
     segments, root = get_segment_boundaries(orig_kml)
     total_pts = sum(s['count'] for s in segments)
@@ -160,7 +171,17 @@ def main():
     tree.write(os.path.join(temp_dir, 'doc.kml'), xml_declaration=True, encoding='UTF-8')
     
     # Create new KMZ
-    out_kmz = os.path.join(DIR, 'edited_track_v2.kmz')
+    # Determine output filename from original
+    meta_path = os.path.join(DIR, 'upload_meta.json')
+    meta = {}
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+        except:
+            pass
+    base = meta.get('name', 'edited_track.kmz').replace('.kmz', '_edited.kmz')
+    out_kmz = os.path.join(DIR, base)
     print(f"Creating KMZ: {out_kmz}")
     
     with zipfile.ZipFile(out_kmz, 'w', zipfile.ZIP_DEFLATED) as zout:
