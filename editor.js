@@ -93,7 +93,7 @@ function showInfo(i) {
     '经度: ' + P[i].lng.toFixed(6) + '<br>' +
     '海拔: ' + P[i].alt + 'm' +
     '<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">' +
-    '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); clearSel()" style="background:var(--border);border:none;color:var(--ink);border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer">✕ 取消</button>' +
+    '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); clearSel()" style="background:var(--border);border:none;color:var(--ink);border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer">取消</button>' +
     '</div></div>';
   L.popup({closeButton: true, maxWidth: 300})
     .setLatLng(latlng)
