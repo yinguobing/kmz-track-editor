@@ -149,6 +149,9 @@ function updateSel() {
   if (ss != null && se != null) {
     var s = Math.min(ss, se), e = Math.max(ss, se);
     var sl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.9}).addTo(mm);
+    sl.on('click', function() {
+      if (ss !== null && se !== null) updateSelInfo(ss, se);
+    });
     sm.push(sl);
     var sm1 = L.circleMarker([P[s].lat, P[s].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(mm);
     sm1.bindTooltip('#' + s);
