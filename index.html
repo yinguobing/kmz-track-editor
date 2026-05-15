@@ -58,7 +58,7 @@ tailwind.config = {
           <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnDel">&#128465; 删除范围</button>
           <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all active:translate-y-px" id="btnClear">清除选区</button>
         </div>
-        <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnClearAll" style="background:#b91c1c;margin-top:4px;width:100%">✕ 清空所有删除标记</button>
+        <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs w-full transition-all active:translate-y-px" id="btnClearAll">✕ 清空所有删除标记</button>
       </div>
       <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
         <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 操作</div>
@@ -287,7 +287,7 @@ document.getElementById('btnShow').onclick = function() {
   }
   if (!h) h = '<div style="color:#6b7280">暂无删除记录</div>';
   el.innerHTML = '<b>待删除范围</b>' + h +
-    '<button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all active:translate-y-px" id="closeRemovalBtn" style="margin-top:4px;width:100%;padding:2px 0;font-size:11px">关闭</button>';
+    '<button class="bg-earth-700 hover:bg-earth-600 text-earth-100 rounded px-4 py-1 text-xs border border-earth-600 w-full mt-1" id="closeRemovalBtn">关闭</button>';
   document.getElementById('closeRemovalBtn').onclick = function() { el.style.display = 'none'; };
   el.style.display = 'block';
 };
