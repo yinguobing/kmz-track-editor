@@ -44,50 +44,60 @@ tailwind.config = {
     <div id="panel-header" class="px-4 py-3 border-b border-earth-700 font-bold text-base flex items-center gap-2 bg-gradient-to-r from-forest-900/30 to-transparent text-forest-400">
       <span class="track-icon">&#9998;</span> <span>两步路轨迹编辑器</span>
     </div>
-    <div id="panel-body" class="p-3 flex-1 space-y-2.5">
-      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 底图</div>
-        <select id="mapSelect" class="w-full px-2.5 py-1.5 rounded bg-earth-900 border border-earth-600 text-earth-100 text-xs outline-none focus:border-forest-500 transition-colors cursor-pointer">
-          <option value="satellite">&#128147; 卫星地图</option>
-          <option value="osm">&#127758; 标准地图</option>
-        </select>
+        <div id="panel-body" class="flex-1 flex flex-col overflow-hidden">
+      <!-- Section 1: 标题区 -->
+      <div class="px-4 py-2.5 border-b border-earth-700">
+        <div class="text-sm font-bold text-forest-400 tracking-wide">&#9998; 两步路轨迹编辑器</div>
+        <div class="text-[10px] text-earth-400 mt-0.5" id="trackSubtitle">青见梁穿越线</div>
       </div>
-      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 选择与标记</div>
-        <label class="flex items-center gap-1.5 text-xs text-earth-300 cursor-pointer py-1 select-none"><input type="checkbox" id="modeSel" class="accent-forest-500 w-3.5 h-3.5 cursor-pointer"> 选择模式（点选轨迹起点/终点）</label>
-        <div class="flex flex-wrap gap-1 mt-1.5">
-          <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnDel">&#128465; 删除范围</button>
-          <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all active:translate-y-px" id="btnClear">清除选区</button>
-        </div>
-        <button class="bg-red-600 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs w-full transition-all active:translate-y-px" id="btnClearAll">✕ 清空所有删除标记</button>
-      </div>
-      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 操作</div>
-        <div class="flex flex-wrap gap-1">
-          <button class="bg-blue-600 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs transition-all active:translate-y-px" id="btnShow">&#128196; 删除列表</button>
-          <a href="/upload" style="flex:1;text-decoration:none"><button class="bg-purple-600 hover:bg-purple-500 hover:shadow-lg hover:shadow-purple-500/20 text-white font-semibold rounded px-3 py-1.5 text-xs w-full transition-all active:translate-y-px">📤 上传 KMZ</button></a>
-        </div>
-        <button class="bg-forest-600 hover:bg-forest-500 hover:shadow-lg hover:shadow-forest-500/20 text-white font-semibold rounded px-3 py-2 text-xs w-full mt-1 transition-all active:translate-y-px" id="btnDownload">&#11015; 下载 KMZ</button>
-      </div>
-      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 统计</div>
-        <div class="text-xs text-earth-400 leading-relaxed bg-black/15 rounded p-2">
-          总点数 <b id="totalPts">3245</b><br>
-          已标记删除 <b class="red" id="delPts">0</b><br>
-          最终点数 <b class="green" id="finalPts">3245</b>
+      
+      <!-- Section 2: 项目配置 -->
+      <div class="px-3 py-2 border-b border-earth-700">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5">项目配置</div>
+        <div class="flex gap-1.5">
+          <a href="/upload" class="flex-1"><button class="bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded px-2 py-1.5 text-xs w-full transition-all">📤 导入 KMZ</button></a>
+          <select id="mapSelect" class="flex-1 px-2 py-1.5 rounded bg-earth-900 border border-earth-600 text-earth-100 text-xs outline-none focus:border-forest-500 cursor-pointer">
+            <option value="satellite">🛰️ 卫星</option>
+            <option value="osm">🗺️ 标准</option>
+          </select>
         </div>
       </div>
-      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 状态</div>
-        <div id="status" class="text-xs leading-relaxed bg-black/15 rounded p-2 text-earth-400"><b>青见梁穿越线</b><br>点击轨迹看详情。勾选「选择模式」后点选起点/终点。</div>
+      
+      <!-- Section 3: 操作区 -->
+      <div class="px-3 py-2 border-b border-earth-700">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5">操作区</div>
+        <label class="flex items-center gap-1.5 text-xs text-earth-300 cursor-pointer select-none mb-1.5">
+          <input type="checkbox" id="modeSel" class="accent-forest-500 w-3.5 h-3.5 cursor-pointer"> 选择模式
+        </label>
+        <div id="selectionInfo" class="text-xs text-earth-400 bg-black/15 rounded p-2 mb-1.5 leading-relaxed min-h-[48px]">
+          点选轨迹上的起点和终点
+        </div>
+        <div class="flex gap-1.5">
+          <button class="bg-red-600 hover:bg-red-500 text-white font-semibold rounded px-3 py-1.5 text-xs flex-1 transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
+          <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all" id="btnClear">清除</button>
+        </div>
       </div>
-      <div class="bg-earth-800 border border-earth-700 rounded-lg p-3">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-forest-500"></span> 待删除范围</div>
-        <div id="removalsList"></div>
+      
+      <!-- Section 4: 已删除列表 -->
+      <div class="px-3 py-2 border-b border-earth-700 flex-1 overflow-hidden flex flex-col min-h-0">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5 flex items-center justify-between">
+          <span>已删除路径</span>
+          <span class="text-red-400 text-[10px] font-normal" id="delListCount">0 段</span>
+        </div>
+        <div id="removalsList" class="text-[11px] overflow-y-auto flex-1 min-h-0 space-y-0.5"></div>
+      </div>
+      
+      <!-- Section 5: 统计与导出 -->
+      <div class="px-3 py-2 border-t border-earth-700 bg-earth-800/80">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5">统计与导出</div>
+        <div class="flex items-center justify-between text-xs text-earth-400 mb-2">
+          <span>总 <b id="totalPts" class="text-earth-100">0</b></span>
+          <span>已删 <b class="text-red-400" id="delPts">0</b></span>
+          <span>最终 <b class="text-forest-400" id="finalPts">0</b></span>
+        </div>
+        <button class="bg-forest-600 hover:bg-forest-500 text-white font-semibold rounded px-3 py-2 text-xs w-full transition-all" id="btnDownload">⬇ 下载 KMZ</button>
       </div>
     </div>
-  </div>
-</div>
 
 <script>
 
@@ -204,19 +214,7 @@ var ss = null, se = null, sm = [], rv = [], removedLines = [];
 
 document.getElementById('modeSel').onchange = function() { if (!this.checked) clearSel(); };
 
-function clearAll() {
-  if (rv.length > 0 && confirm('确定清除所有删除标记吗？')) {
-    rv = [];
-    localStorage.removeItem('trackEditor_removals');
-    document.getElementById('delPts').textContent = '0';
-    document.getElementById('finalPts').textContent = P.length;
-    // Also clear visual markers
-    removedLines.forEach(function(l) { mm.removeLayer(l); });
-    removedLines = [];
-    document.getElementById('removalsList').style.display = 'none';
-    document.getElementById('status').innerHTML = '<b>' + trackName + '</b><br>已清除所有删除标记';
-  }
-}
+
 function clearSel() {
   ss = null; se = null;
   sm.forEach(function(x) { mm.removeLayer(x); });
@@ -224,7 +222,7 @@ function clearSel() {
 }
 
 document.getElementById('btnClear').onclick = clearSel;
-document.getElementById('btnClearAll').onclick = clearAll;
+
 
 function updateSel() {
   sm.forEach(function(x) { mm.removeLayer(x); });
@@ -266,32 +264,7 @@ mm.on('click', function(e) {
   updateSel();
 });
 
-document.getElementById('btnDel').onclick = function() {
-  if (ss == null || se == null) return;
-  var s = Math.min(ss, se), e = Math.max(ss, se);
-  rv.push({start: s, end: e});
-  var rl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 4, opacity: 0.5, dashArray: '6,4'}).addTo(mm);
-  removedLines.push(rl);
-  var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
-  document.getElementById('delPts').textContent = del;
-  document.getElementById('finalPts').textContent = P.length - del;
-  document.getElementById('status').innerHTML = '已标记删除 <b>#' + s + '</b> &rarr; <b>#' + e + '</b>';
-  clearSel();
-};
 
-document.getElementById('btnShow').onclick = function() {
-  var el = document.getElementById('removalsList');
-  if (el.style.display == 'block') { el.style.display = 'none'; return; }
-  var h = '';
-  for (var i = 0; i < rv.length; i++) {
-    h += '<div>#' + rv[i].start + ' &rarr; #' + rv[i].end + ' (' + (rv[i].end - rv[i].start + 1) + ' pts)</div>';
-  }
-  if (!h) h = '<div style="color:#6b7280">暂无删除记录</div>';
-  el.innerHTML = '<b>待删除范围</b>' + h +
-    '<button class="bg-earth-700 hover:bg-earth-600 text-earth-100 rounded px-4 py-1 text-xs border border-earth-600 w-full mt-1" id="closeRemovalBtn">关闭</button>';
-  document.getElementById('closeRemovalBtn').onclick = function() { el.style.display = 'none'; };
-  el.style.display = 'block';
-};
 
 document.getElementById('btnDownload').onclick = function() {
   var overlay = document.getElementById('overlay');
@@ -317,4 +290,94 @@ document.getElementById('btnDownload').onclick = function() {
 
 mm.fitBounds(pl.getBounds(), {padding: [30, 30]})
 };
+
+function updateSelInfo(s, e) {
+  var info = document.getElementById('selectionInfo');
+  var btn = document.getElementById('btnConfirmDel');
+  if (s === null || e === null) {
+    info.innerHTML = '点选轨迹上的起点和终点';
+    btn.disabled = true;
+    return;
+  }
+  var start = Math.min(s, e), end = Math.max(s, e);
+  var pts_count = end - start + 1;
+  var p1 = P[start], p2 = P[end];
+  info.innerHTML = '<div class="text-earth-100 font-semibold">#' + start + ' \u2192 #' + end + '</div>' +
+    '<div>' + pts_count + ' \u4e2a\u70b9</div>' +
+    '<div class="text-[10px] text-earth-500">\u8d77\u70b9: ' + p1.lat.toFixed(5) + ', ' + p1.lng.toFixed(5) + '</div>' +
+    '<div class="text-[10px] text-earth-500">\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '</div>';
+  btn.disabled = false;
+}
+
+function refreshDelList() {
+  var el = document.getElementById('removalsList');
+  document.getElementById('delListCount').textContent = rv.length + ' \u6bb5';
+  if (rv.length === 0) {
+    el.innerHTML = '<div class="text-earth-500 text-center py-4">\u6682\u65e0\u5220\u9664\u8def\u5f84</div>';
+    return;
+  }
+  var h = '';
+  for (var i = rv.length - 1; i >= 0; i--) {
+    var r = rv[i];
+    var cnt = r.end - r.start + 1;
+    h += '<div class="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-earth-700/50 cursor-pointer transition-colors group" data-idx="' + i + '">' +
+      '<span class="flex-1 text-earth-300 text-[11px]">#' + r.start + '\u2192#' + r.end + ' <span class="text-earth-500">(' + cnt + ')</span></span>' +
+      '<button class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs px-1 transition-opacity" onclick="undoDelete(' + i + ')">\u2715</button>' +
+      '</div>';
+  }
+  el.innerHTML = h;
+  
+  el.querySelectorAll('[data-idx]').forEach(function(div) {
+    div.addEventListener('click', function(e) {
+      if (e.target.tagName === 'BUTTON') return;
+      var idx = parseInt(this.dataset.idx);
+      var r = rv[idx];
+      highlightRange(r.start, r.end);
+    });
+  });
+}
+
+function undoDelete(idx) {
+  var r = rv[idx];
+  rv.splice(idx, 1);
+  localStorage.setItem('trackEditor_removals', JSON.stringify(rv));
+  for (var i = 0; i < removedLines.length; i++) {
+    if (removedLines[i]._delInfo && removedLines[i]._delInfo.start === r.start && removedLines[i]._delInfo.end === r.end) {
+      mm.removeLayer(removedLines[i]);
+      removedLines.splice(i, 1);
+      break;
+    }
+  }
+  var del = rv.reduce(function(a, r2) { return a + r2.end - r2.start + 1; }, 0);
+  document.getElementById('delPts').textContent = del;
+  document.getElementById('finalPts').textContent = P.length - del;
+  refreshDelList();
+}
+
+function highlightRange(s, e) {
+  if (window._hlLine) { mm.removeLayer(window._hlLine); }
+  window._hlLine = L.polyline(pts.slice(s, e + 1), {color: '#fbbf24', weight: 8, opacity: 0.9}).addTo(mm);
+  mm.fitBounds(window._hlLine.getBounds(), {padding: [30, 30]});
+  setTimeout(function() {
+    if (window._hlLine) { mm.removeLayer(window._hlLine); window._hlLine = null; }
+  }, 3000);
+}
+
+// btnConfirmDel handler
+document.getElementById('btnConfirmDel').onclick = function() {
+  if (ss === null || se === null) { return; }
+  var s = Math.min(ss, se), e = Math.max(ss, se);
+  rv.push({start:s, end:e});
+  localStorage.setItem('trackEditor_removals', JSON.stringify(rv));
+  var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
+  document.getElementById('delPts').textContent = del;
+  document.getElementById('finalPts').textContent = P.length - del;
+  var rl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.7}).addTo(mm);
+  removedLines.push(rl);
+  rl._delInfo = {start: s, end: e};
+  updateSelInfo(null, null);
+  clearSel();
+  refreshDelList();
+};
+
 </script></body></html>
