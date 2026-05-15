@@ -85,12 +85,17 @@ function nearestLL(latlng) {
 }
 
 function showInfo(i) {
-  document.getElementById('selectionInfo').innerHTML =
-    '<div class="section-title" style="font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:600">#' + i + '</div>' +
-    '<div>时间: ' + P[i].time + '</div>' +
-    '<div>纬度: ' + P[i].lat.toFixed(6) + '</div>' +
-    '<div>经度: ' + P[i].lng.toFixed(6) + '</div>' +
-    '<div>海拔: ' + P[i].alt + 'm</div>';
+  var latlng = L.latLng(P[i].lat, P[i].lng);
+  var popupContent = '<div style="font-size:12px;line-height:1.6">' +
+    '<b>#' + i + '</b><br>' +
+    '时间: ' + P[i].time + '<br>' +
+    '纬度: ' + P[i].lat.toFixed(6) + '<br>' +
+    '经度: ' + P[i].lng.toFixed(6) + '<br>' +
+    '海拔: ' + P[i].alt + 'm</div>';
+  L.popup({closeButton: true, maxWidth: 300})
+    .setLatLng(latlng)
+    .setContent(popupContent)
+    .openOn(mm);
 }
 
 pl.on('click', function(e) {
@@ -204,11 +209,9 @@ mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
 
 
 function updateSelInfo(s, e) {
-  var info = document.getElementById('selectionInfo');
-  var btn = document.getElementById('btnConfirmDel');
+    var btn = document.getElementById('btnConfirmDel');
   if (s === null || e === null) {
-    info.innerHTML = '<div >点选轨迹上的起点和终点</div>';
-    btn.disabled = true;
+        btn.disabled = true;
     return;
   }
   var start = Math.min(s, e), end = Math.max(s, e);
