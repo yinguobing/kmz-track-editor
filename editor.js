@@ -209,20 +209,24 @@ mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
 
 
 function updateSelInfo(s, e) {
-    var btn = document.getElementById('btnConfirmDel');
+  var btn = document.getElementById('btnConfirmDel');
   if (s === null || e === null) {
-        btn.disabled = true;
+    btn.disabled = true;
     return;
   }
-  var start = Math.min(s, e), end = Math.max(s, e);
-  var pts_count = end - start + 1;
-  var p1 = P[start], p2 = P[end];
-  info.innerHTML = '<div class="section-title" style="font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:600">#' + start + ' \u2192 #' + end + '</div>' +
-    '<div>' + pts_count + ' \u4e2a\u70b9</div>' +
-    '<div class="detail-text">\u8d77\u70b9: ' + p1.lat.toFixed(5) + ', ' + p1.lng.toFixed(5) + '</div>' +
-    '<div class="detail-text">\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '</div>';
+  var st = Math.min(s, e), en = Math.max(s, e);
+  var cnt = en - st + 1;
+  var p1 = P[st], p2 = P[en];
   btn.disabled = false;
+  var mlat = (p1.lat + p2.lat) / 2;
+  var mlng = (p1.lng + p2.lng) / 2;
+  var html = '<div style="font-size:12px;line-height:1.6">' +
+    '<b>#' + st + ' \u2192 #' + en + '</b><br>' + cnt + ' \u4e2a\u70b9<br>' +
+    '\u8d77\u70b9: ' + p1.lat.toFixed(5) + ', ' + p1.lng.toFixed(5) + '<br>' +
+    '\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '</div>';
+  L.popup({closeButton: true, maxWidth: 300}).setLatLng([mlat, mlng]).setContent(html).openOn(mm);
 }
+
 
 function refreshDelList() {
   var el = document.getElementById('removalsList');
