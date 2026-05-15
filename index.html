@@ -68,6 +68,7 @@ tailwind.config = {
           <button class="bg-red-600 hover:bg-red-500 text-white font-semibold rounded px-3 py-2 text-xs flex-1 transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
           <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-2 text-xs border border-earth-600 transition-all" id="btnClear">清除</button>
         </div>
+        <div id="status" class="text-xs leading-relaxed bg-black/15 rounded p-2 mt-2 text-earth-400 min-h-[36px]">点选轨迹或选择起点/终点</div>
       </div>
       
       <!-- Section 4: 已删除列表 -->
@@ -247,10 +248,13 @@ mm.on('click', function(e) {
   } else if (se == null && ss != null) {
     if (i == ss) {
       ss = null;
+      clearSel();
+      updateSelInfo(null, null);
     } else {
       se = i;
       var s = Math.min(ss, se), e = Math.max(ss, se);
       document.getElementById('status').innerHTML = '选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
+      updateSelInfo(ss, se);
     }
   }
   updateSel();
