@@ -1,0 +1,17 @@
+# Large binary files
+*.kmz
+*.kmz.*
+*.kml
+temp_out/
+temp_out_v2/
+__pycache__/
+*.pyc
+
+# Uploaded temp files
+upload_*.kmz
+pending_edits.json
+edited_track*.kmz
+
+# OS files
+.DS_Store
+Thumbs.db
