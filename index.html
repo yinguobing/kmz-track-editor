@@ -27,7 +27,6 @@ tailwind.config = {
 #panel::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
 #removalsList::-webkit-scrollbar{width:4px}
 #removalsList::-webkit-scrollbar-thumb{background:#475569;border-radius:2px}
-#status{max-height:120px;overflow-y:auto}
 .leaflet-control-zoom a{background:#1e293b !important;color:#f1f5f9 !important;border-color:#334155 !important}
 .leaflet-control-zoom a:hover{background:#334155 !important}
 .leaflet-control-attribution{background:rgba(30,41,59,0.85) !important;color:#94a3b8 !important;font-size:10px !important;padding:2px 6px !important}
@@ -61,14 +60,13 @@ tailwind.config = {
       <div class="px-4 py-3 border-b border-earth-700">
         <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2">操作区</div>
 
-        <div id="selectionInfo" class="text-xs text-earth-400 bg-black/15 rounded p-2.5 mb-2 leading-relaxed min-h-[54px]">
+        <div id="selectionInfo" class="text-xs text-earth-400 bg-black/15 rounded p-2.5 mb-2 leading-relaxed min-h-[54px]" style="max-height:100px;overflow-y:auto">
           点选轨迹上的起点和终点
         </div>
         <div class="flex gap-2">
           <button class="bg-red-600 hover:bg-red-500 text-white font-semibold rounded px-3 py-2 text-xs flex-1 transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
           <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-2 text-xs border border-earth-600 transition-all" id="btnClear">清除</button>
         </div>
-        <div id="status" class="text-xs leading-relaxed bg-black/15 rounded p-2 mt-2 text-earth-400 min-h-[36px]">点选轨迹或选择起点/终点</div>
       </div>
       
       <!-- Section 4: 已删除列表 -->
@@ -91,6 +89,9 @@ tailwind.config = {
         <button class="bg-forest-600 hover:bg-forest-500 text-white font-semibold rounded px-3 py-2 text-xs w-full transition-all" id="btnDownload">⬇ 下载 KMZ</button>
       </div>
     </div>
+  
+  <div id="resizeHandle" style="position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent"></div></div>
+</div>
 
 <script>
 
@@ -103,7 +104,7 @@ function updateStatsWithLocalStorage() {
         var d = rv.reduce(function(a,r){return a+r.end-r.start+1}, 0);
         document.getElementById("delPts").textContent = d;
         document.getElementById("finalPts").textContent = P.length - d;
-        document.getElementById("status").innerHTML = "<b>" + (trackName || "轨迹") + "</b><br><span style=\"color:#fbbf24\">恢复 " + rv.length + " 个删除标记</span>";
+        document.getElementById("selectionInfo").innerHTML = "<span class=\"text-amber-400\">已从缓存恢复 " + rv.length + " 个删除标记</span>";
       }
     } catch(e) {}
   }
@@ -128,7 +129,7 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
 });
 
 function rebuildMap() {
-  if (P.length === 0) { document.getElementById("status").innerHTML = "<b>无轨迹数据</b><br>请上传 KMZ 文件"; return; }
+  if (P.length === 0) { document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>'; return; }
 var mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
 
 var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
@@ -175,11 +176,13 @@ function nearestLL(latlng) {
 }
 
 function showInfo(i) {
-  document.getElementById('status').innerHTML =
-    '<b>#' + i + '</b><br>时间: ' + P[i].time +
-    '<br>纬度: ' + P[i].lat.toFixed(6) +
-    '<br>经度: ' + P[i].lng.toFixed(6) +
-    '<br>海拔: ' + P[i].alt + 'm';
+  document.getElementById('selectionInfo').innerHTML =
+    '<div class="text-earth-100 font-semibold">#' + i + '
+  <div id="resizeHandle" style="position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent"></div></div>' +
+    '<div>时间: ' + P[i].time + '</div>' +
+    '<div>纬度: ' + P[i].lat.toFixed(6) + '</div>' +
+    '<div>经度: ' + P[i].lng.toFixed(6) + '</div>' +
+    '<div>海拔: ' + P[i].alt + 'm</div>';
 }
 
 pl.on('click', function(e) {
@@ -196,7 +199,7 @@ var ss = null, se = null, sm = [], rv = [], removedLines = [];
     try {
       rv = JSON.parse(saved);
       if (rv.length > 0) {
-        document.getElementById('status').innerHTML += '<br><span style="color:#fbbf24">↻ 已恢复 ' + rv.length + ' 个删除标记</span>';
+        document.getElementById('selectionInfo').innerHTML = '<span class="text-amber-400">↻ 已恢复 ' + rv.length + ' 个删除标记</span>';
         var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
         document.getElementById('delPts').textContent = del;
         document.getElementById('finalPts').textContent = P.length - del;
@@ -253,7 +256,7 @@ mm.on('click', function(e) {
     } else {
       se = i;
       var s = Math.min(ss, se), e = Math.max(ss, se);
-      document.getElementById('status').innerHTML = '选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
+      document.getElementById('selectionInfo').innerHTML = '<div class="text-earth-100 font-semibold">已选中</div>选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
       updateSelInfo(ss, se);
     }
   }
@@ -291,7 +294,7 @@ function updateSelInfo(s, e) {
   var info = document.getElementById('selectionInfo');
   var btn = document.getElementById('btnConfirmDel');
   if (s === null || e === null) {
-    info.innerHTML = '点选轨迹上的起点和终点';
+    info.innerHTML = '<div class="text-earth-500">点选轨迹上的起点和终点</div>';
     btn.disabled = true;
     return;
   }
@@ -381,6 +384,7 @@ document.getElementById('btnConfirmDel').onclick = function() {
 (function(){
   var handle = document.getElementById('resizeHandle');
   var panel = document.getElementById('panel');
+  if (!handle || !panel) { /* panel not found */ return; }
   var isDragging = false;
   
   handle.addEventListener('mousedown', function(e) {
