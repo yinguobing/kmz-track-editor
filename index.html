@@ -129,7 +129,7 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
 });
 
 // Guard: no data
-if (P.length === 0) { document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>'; return; }
+if (P.length > 0) {
 
 // Initialize map
 var mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
@@ -289,6 +289,11 @@ document.getElementById('btnDownload').onclick = function() {
 };
 
 mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
+
+} else {
+  document.getElementById('selectionInfo').innerHTML = '<span class="text-earth-400">无轨迹数据，请上传 KMZ 文件</span>';
+}
+
 
 function updateSelInfo(s, e) {
   var info = document.getElementById('selectionInfo');
