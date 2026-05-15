@@ -40,47 +40,39 @@ tailwind.config = {
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
 <div id="app" class="flex h-screen w-screen">
   <div id="map"></div>
-  <div id="panel" class="w-[290px] min-w-[290px] bg-earth-800 border-l border-earth-700 flex flex-col overflow-y-auto">
+  <div id="panel" class="w-[300px] bg-earth-800 border-l border-earth-700 flex flex-col overflow-y-auto relative" style="min-width:200px;max-width:500px">
     <div id="panel-header" class="px-4 py-3 border-b border-earth-700 font-bold text-base flex items-center gap-2 bg-gradient-to-r from-forest-900/30 to-transparent text-forest-400">
       <span class="track-icon">&#9998;</span> <span>两步路轨迹编辑器</span>
     </div>
         <div id="panel-body" class="flex-1 flex flex-col overflow-hidden">
-      <!-- Section 1: 标题区 -->
-      <div class="px-4 py-2.5 border-b border-earth-700">
-        <div class="text-sm font-bold text-forest-400 tracking-wide">&#9998; 两步路轨迹编辑器</div>
-        <div class="text-[10px] text-earth-400 mt-0.5" id="trackSubtitle">青见梁穿越线</div>
-      </div>
+
       
       <!-- Section 2: 项目配置 -->
-      <div class="px-3 py-2 border-b border-earth-700">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5">项目配置</div>
-        <div class="flex gap-1.5">
-          <a href="/upload" class="flex-1"><button class="bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded px-2 py-1.5 text-xs w-full transition-all">📤 导入 KMZ</button></a>
-          <select id="mapSelect" class="flex-1 px-2 py-1.5 rounded bg-earth-900 border border-earth-600 text-earth-100 text-xs outline-none focus:border-forest-500 cursor-pointer">
-            <option value="satellite">🛰️ 卫星</option>
-            <option value="osm">🗺️ 标准</option>
-          </select>
-        </div>
+      <div class="px-4 py-3 border-b border-earth-700">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2">项目配置</div>
+        <a href="/upload"><button class="bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded px-3 py-2 text-xs w-full transition-all mb-2">📤 导入 KMZ</button></a>
+        <select id="mapSelect" class="w-full px-3 py-2 rounded bg-earth-900 border border-earth-600 text-earth-100 text-xs outline-none focus:border-forest-500 cursor-pointer">
+          <option value="satellite">🛰️ 卫星地图</option>
+          <option value="osm">🗺️ 标准地图</option>
+        </select>
       </div>
       
       <!-- Section 3: 操作区 -->
-      <div class="px-3 py-2 border-b border-earth-700">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5">操作区</div>
-        <label class="flex items-center gap-1.5 text-xs text-earth-300 cursor-pointer select-none mb-1.5">
-          <input type="checkbox" id="modeSel" class="accent-forest-500 w-3.5 h-3.5 cursor-pointer"> 选择模式
-        </label>
-        <div id="selectionInfo" class="text-xs text-earth-400 bg-black/15 rounded p-2 mb-1.5 leading-relaxed min-h-[48px]">
+      <div class="px-4 py-3 border-b border-earth-700">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2">操作区</div>
+
+        <div id="selectionInfo" class="text-xs text-earth-400 bg-black/15 rounded p-2.5 mb-2 leading-relaxed min-h-[54px]">
           点选轨迹上的起点和终点
         </div>
-        <div class="flex gap-1.5">
-          <button class="bg-red-600 hover:bg-red-500 text-white font-semibold rounded px-3 py-1.5 text-xs flex-1 transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
-          <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-1.5 text-xs border border-earth-600 transition-all" id="btnClear">清除</button>
+        <div class="flex gap-2">
+          <button class="bg-red-600 hover:bg-red-500 text-white font-semibold rounded px-3 py-2 text-xs flex-1 transition-all disabled:opacity-30 disabled:cursor-not-allowed" id="btnConfirmDel" disabled>&#128465; 确定删除</button>
+          <button class="bg-earth-700 hover:bg-earth-600 text-earth-100 font-semibold rounded px-3 py-2 text-xs border border-earth-600 transition-all" id="btnClear">清除</button>
         </div>
       </div>
       
       <!-- Section 4: 已删除列表 -->
-      <div class="px-3 py-2 border-b border-earth-700 flex-1 overflow-hidden flex flex-col min-h-0">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5 flex items-center justify-between">
+      <div class="px-4 py-3 border-b border-earth-700 flex-1 overflow-hidden flex flex-col min-h-0">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2 flex items-center justify-between">
           <span>已删除路径</span>
           <span class="text-red-400 text-[10px] font-normal" id="delListCount">0 段</span>
         </div>
@@ -88,8 +80,8 @@ tailwind.config = {
       </div>
       
       <!-- Section 5: 统计与导出 -->
-      <div class="px-3 py-2 border-t border-earth-700 bg-earth-800/80">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-1.5">统计与导出</div>
+      <div class="px-4 py-3 border-t border-earth-700 bg-earth-800/80">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-earth-400 mb-2">统计与导出</div>
         <div class="flex items-center justify-between text-xs text-earth-400 mb-2">
           <span>总 <b id="totalPts" class="text-earth-100">0</b></span>
           <span>已删 <b class="text-red-400" id="delPts">0</b></span>
@@ -212,7 +204,7 @@ var ss = null, se = null, sm = [], rv = [], removedLines = [];
   }
 })();
 
-document.getElementById('modeSel').onchange = function() { if (!this.checked) clearSel(); };
+
 
 
 function clearSel() {
@@ -246,7 +238,7 @@ function updateSel() {
 }
 
 mm.on('click', function(e) {
-  if (!document.getElementById('modeSel').checked) return;
+  // Always in selection mode
   var i = nearestLL(e.latlng);
   if (i == null) return;
   if (ss == null) {
@@ -379,5 +371,37 @@ document.getElementById('btnConfirmDel').onclick = function() {
   clearSel();
   refreshDelList();
 };
+
+
+// Sidebar resize
+(function(){
+  var handle = document.getElementById('resizeHandle');
+  var panel = document.getElementById('panel');
+  var isDragging = false;
+  
+  handle.addEventListener('mousedown', function(e) {
+    isDragging = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    var width = Math.max(200, Math.min(500, e.clientX));
+    panel.style.width = width + 'px';
+  });
+  
+  document.addEventListener('mouseup', function() {
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Trigger map resize
+      if (typeof mm !== 'undefined') {
+        setTimeout(function() { mm.invalidateSize(); }, 50);
+      }
+    }
+  });
+})();
 
 </script></body></html>
