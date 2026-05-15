@@ -91,7 +91,10 @@ function showInfo(i) {
     '时间: ' + P[i].time + '<br>' +
     '纬度: ' + P[i].lat.toFixed(6) + '<br>' +
     '经度: ' + P[i].lng.toFixed(6) + '<br>' +
-    '海拔: ' + P[i].alt + 'm</div>';
+    '海拔: ' + P[i].alt + 'm' +
+    '<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">' +
+    '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); clearSel()" style="background:var(--border);border:none;color:var(--ink);border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer">✕ 取消</button>' +
+    '</div></div>';
   L.popup({closeButton: true, maxWidth: 300})
     .setLatLng(latlng)
     .setContent(popupContent)
@@ -209,21 +212,24 @@ mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
 
 
 function updateSelInfo(s, e) {
-  var btn = document.getElementById('btnConfirmDel');
   if (s === null || e === null) {
-    btn.disabled = true;
+    document.getElementById('btnConfirmDel').disabled = true;
     return;
   }
   var st = Math.min(s, e), en = Math.max(s, e);
   var cnt = en - st + 1;
   var p1 = P[st], p2 = P[en];
-  btn.disabled = false;
+  document.getElementById('btnConfirmDel').disabled = false;
   var mlat = (p1.lat + p2.lat) / 2;
   var mlng = (p1.lng + p2.lng) / 2;
   var html = '<div style="font-size:12px;line-height:1.6">' +
     '<b>#' + st + ' \u2192 #' + en + '</b><br>' + cnt + ' \u4e2a\u70b9<br>' +
     '\u8d77\u70b9: ' + p1.lat.toFixed(5) + ', ' + p1.lng.toFixed(5) + '<br>' +
-    '\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '</div>';
+    '\u7ec8\u70b9: ' + p2.lat.toFixed(5) + ', ' + p2.lng.toFixed(5) + '<br>' +
+    '<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px;display:flex;gap:6px">' +
+    '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); confirmDelete()" style="background:var(--coral);color:#fff;border:none;border-radius:999px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">\u2715 删除</button>' +
+    '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); clearSel()" style="background:var(--surface-soft);border:1px solid var(--border);color:var(--ink);border-radius:999px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">重置</button>' +
+    '</div></div>';
   L.popup({closeButton: true, maxWidth: 300}).setLatLng([mlat, mlng]).setContent(html).openOn(mm);
 }
 
@@ -282,8 +288,7 @@ function highlightRange(s, e) {
   }, 3000);
 }
 
-// btnConfirmDel handler
-document.getElementById('btnConfirmDel').onclick = function() {
+function confirmDelete() {
   if (ss === null || se === null) { return; }
   var s = Math.min(ss, se), e = Math.max(ss, se);
   rv.push({start:s, end:e});
@@ -297,7 +302,11 @@ document.getElementById('btnConfirmDel').onclick = function() {
   updateSelInfo(null, null);
   clearSel();
   refreshDelList();
-};
+}
+
+// btnConfirmDel handler (from sidebar)
+document.getElementById('btnConfirmDel').onclick = confirmDelete;
+
 
 
 // Sidebar resize
