@@ -76,13 +76,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 .btn:active{transform:translateY(1px)}
 .btn:disabled{opacity:0.3;cursor:not-allowed;transform:none}
 .btn-full{width:100%}
-.btn-green{background:var(--ink);color:var(--canvas)}
-.btn-green:hover:not(:disabled){background:var(--border-strong);box-shadow:0 0 12px rgba(0,0,0,0.2)}
+.btn-primary{background:var(--ink);color:var(--canvas);font-weight:500}
+.btn-primary:hover:not(:disabled){background:var(--border-strong)}
 .btn-red{background:var(--coral);color:#fff}
 .btn-red:hover:not(:disabled){background:#922700;box-shadow:0 0 12px rgba(170,45,0,0.25)}
 .btn-gray{background:var(--border);color:var(--ink);border:1px solid var(--border)}
 .btn-gray:hover{background:var(--border-strong)}
-.btn-blue{background:var(--blue);color:#fff}
+.btn-secondary{background:transparent;color:var(--body);border:1px solid var(--border);font-weight:400}
 .btn-purple{background:var(--peach);color:var(--canvas)}
 .btn-sm{padding:5px 10px;font-size:11px}
 .btn-group{display:flex;gap:6px}
@@ -157,8 +157,8 @@ select:hover,select:focus{border-color:var(--coral)}
           <span>最终 <b class="green" id="finalPts">0</b></span>
         </div>
         <div class="btn-group">
-          <button class="btn btn-blue" style="flex:1" onclick="document.getElementById('uploadModal').style.display='flex'">导入</button>
-          <button class="btn btn-green" style="flex:1" id="btnDownload">导出</button>
+          <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('uploadModal').style.display='flex'">导入</button>
+          <button class="btn btn-primary" style="flex:1" id="btnDownload">导出</button>
         </div>
       </div></div>
   </div>
@@ -171,7 +171,7 @@ select:hover,select:focus{border-color:var(--coral)}
     <p style="margin:0 0 16px;color:var(--muted);font-size:13px">支持两步路导出的 .kmz 文件</p>
     <form id="uploadForm" enctype="multipart/form-data">
       <input type="file" name="kmz" accept=".kmz" required style="margin:8px 0;color:var(--ink);font-size:13px"><br>
-      <button type="submit" class="btn btn-green" style="padding:8px 24px;margin-top:4px">上传并加载</button>
+      <button type="submit" class="btn btn-primary" style="padding:8px 24px;margin-top:4px">上传并加载</button>
     </form>
     <div id="uploadStatus" style="margin-top:12px;font-size:13px"></div>
     <button onclick="document.getElementById('uploadModal').style.display='none'" class="btn btn-gray" style="margin-top:8px;padding:4px 16px">取消</button>
