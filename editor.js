@@ -124,6 +124,7 @@ clearSel = function() {
   sm.forEach(function(x) { mm.removeLayer(x); });
   sm = [];
   updateSelInfo(null, null);
+  document.getElementById('btnClear').disabled = true;
 }
 
 document.getElementById('btnClear').onclick = clearSel;
@@ -166,6 +167,7 @@ mm.on('click', function(e) {
       se = i;
       var s = Math.min(ss, se), e = Math.max(ss, se);
       document.getElementById('selectionInfo').innerHTML = '<div style="color:var(--text);font-weight:600;font-size:12px">已选中</div>选中 <b>#' + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
+      document.getElementById('btnClear').disabled = false;
       updateSelInfo(ss, se);
     }
   }
