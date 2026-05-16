@@ -12,8 +12,16 @@ var rv = [], ss = null, se = null, sm = [], removedLines = [];
 var clearSel;
 var DATA = [];  // loaded from track_data.json
 var dragCounter = 0;
+var fileMeta = {};  // name from upload_meta.json
 
 var P = [];
+
+// Load file metadata (original filename)
+fetch('/upload_meta.json').then(function(r){return r.json();}).then(function(d){
+  fileMeta = d;
+  // Re-render file info in case it was rendered before meta loaded
+  renderFileInfo();
+}).catch(function(){});
 
 // Load track data from JSON
 fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
@@ -25,6 +33,58 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
   P = [];
   initEditor();
 });
+
+// Compute total distance (Haversine)
+function computeDistance(pts) {
+  if (pts.length < 2) return 0;
+  function rad(d) { return d * Math.PI / 180; }
+  var total = 0;
+  for (var i = 1; i < pts.length; i++) {
+    var p1 = pts[i - 1], p2 = pts[i];
+    var dlat = rad(p2[1] - p1[1]);
+    var dlon = rad(p2[2] - p1[2]);
+    var a = Math.sin(dlat / 2) * Math.sin(dlat / 2) +
+            Math.cos(rad(p1[1])) * Math.cos(rad(p2[1])) *
+            Math.sin(dlon / 2) * Math.sin(dlon / 2);
+    total += 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  return total;
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  var y = d.getFullYear();
+  var m = ('0' + (d.getMonth() + 1)).slice(-2);
+  var day = ('0' + d.getDate()).slice(-2);
+  return y + '-' + m + '-' + day;
+}
+
+function renderFileInfo() {
+  var el = document.getElementById('fileInfo');
+  if (!el) return;
+  if (P.length === 0) {
+    el.innerHTML = '<div class="placeholder"><span class="icon">📂</span>暂无轨迹<br>拖放 KMZ 文件到地图</div>';
+    return;
+  }
+  var name = fileMeta.name || DATA._name || '轨迹';
+  if (name.endsWith('.kmz')) name = name.slice(0, -4);
+  var date = formatDate(P[0].time);
+  var dist = computeDistance(DATA);
+  var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
+  el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
+    '<div class="meta">' +
+    '<span>📅 ' + date + '</span>' +
+    '<span>📏 ' + distStr + '</span>' +
+    '<span>📍 ' + P.length + ' 点</span>' +
+    '</div>';
+}
+
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
 
 // Drop zone helpers
 function showDropZone() {
@@ -303,8 +363,9 @@ if (P.length > 0) {
   setDropZonePersistent(true);
 }
 
-// Update stats
+// Update stats and file info
 updateStats();
+renderFileInfo();
 
 }  // end initEditor
 
