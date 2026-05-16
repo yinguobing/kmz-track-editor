@@ -93,11 +93,9 @@ function renderFileInfo() {
   var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
     '<div class="file-stats">' +
-      '<div class="stat"><div class="stat-label">记录时间</div><div class="stat-value">' + date + '</div></div>' +
-      '<div class="stat-divider"></div>' +
-      '<div class="stat"><div class="stat-label">轨迹长度</div><div class="stat-value">' + distStr + '</div></div>' +
-      '<div class="stat-divider"></div>' +
-      '<div class="stat"><div class="stat-label">轨迹点数</div><div class="stat-value">' + points.length.toLocaleString() + '</div></div>' +
+      '<div class="badge"><span class="icon">📅</span><span class="val">' + date + '</span></div>' +
+      '<div class="badge"><span class="icon">📏</span><span class="val">' + distStr + '</span></div>' +
+      '<div class="badge" style="flex:0 0 100%"><span class="icon">📍</span><span class="val">' + points.length.toLocaleString() + ' 点</span></div>' +
     '</div>';
 }
 
