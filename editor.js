@@ -14,6 +14,7 @@ var points = [];
 var waypoints = [];
 var wpGroup;
 var wpVisible = true;
+var trackVisible = true;
 
 // ===== Helpers =====
 
@@ -103,9 +104,9 @@ function renderFileInfo() {
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
     '<div class="sub">' + date + '</div>' +
     '<div class="file-metrics">' +
-      '<div class="metric"><div class="metric-label">轨迹长度</div><div class="metric-value">' + distStr + '</div></div>' +
+      '<div class="metric"><div class="metric-label">轨迹长度</div><div class="metric-value" style="display:flex;align-items:center;justify-content:center;gap:4px">' + distStr + '<span class="eye-btn" onclick="toggleTrack()">' + (trackVisible ? '👁' : '👁‍🗨') + '</span></div></div>' +
       '<div class="metric"><div class="metric-label">轨迹点数</div><div class="metric-value">' + points.length.toLocaleString() + '</div></div>' +
-      '<div class="metric"><div class="metric-label">标注点</div><div class="metric-value" style="font-size:16px;display:flex;align-items:center;justify-content:center;gap:4px">' + wpCount + '<span class="eye-btn" onclick="toggleWaypoints()">' + (wpVisible ? '👁' : '👁‍🗨') + '</span></div></div>' +
+      '<div class="metric"><div class="metric-label">标注点</div><div class="metric-value" style="display:flex;align-items:center;justify-content:center;gap:4px">' + wpCount + '<span class="eye-btn" onclick="toggleWaypoints()">' + (wpVisible ? '👁' : '👁‍🗨') + '</span></div></div>' +
     '</div>';
 }
 
@@ -116,13 +117,27 @@ function escHtml(s) {
 }
 
 // ===== Waypoints =====
+function toggleLayer(layer) {
+  if (!layer) return;
+  if (map.hasLayer(layer)) { map.removeLayer(layer); return false; }
+  else { map.addLayer(layer); return true; }
+}
+
 function toggleWaypoints() {
   if (!wpGroup) return;
-  wpVisible = !wpVisible;
-  if (wpVisible) {
-    map.addLayer(wpGroup);
+  wpVisible = toggleLayer(wpGroup);
+  renderFileInfo();
+}
+
+function toggleTrack() {
+  if (!trackLine) return;
+  trackVisible = !trackVisible;
+  if (trackVisible) {
+    map.addLayer(trackLine);
+    if (pointMarkers) map.addLayer(pointMarkers);
   } else {
-    map.removeLayer(wpGroup);
+    map.removeLayer(trackLine);
+    if (pointMarkers) map.removeLayer(pointMarkers);
   }
   renderFileInfo();
 }
