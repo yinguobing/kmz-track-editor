@@ -5,7 +5,7 @@ function updateStats() {
 }
 
 // ===== State =====
-var map, osmLayer, satLayer, labels, latlngs, trackLine;
+var map, osmLayer, satLayer, labels, latlngs, trackLine, pointMarkers;
 var removals = [], selStart = null, selEnd = null, selMarkers = [], removedLines = [];
 var rawData = [];
 var dragCounter = 0;
@@ -224,11 +224,13 @@ document.getElementById('mapSwitch').addEventListener('click', function(e) {
     satLayer.addTo(map);
     labels.addTo(map);
     if (trackLine) trackLine.setStyle({color: '#00f5d4'});
+    if (pointMarkers) pointMarkers.eachLayer(function(l) { l.setStyle({color: '#00f5d4', fillColor: '#00f5d4'}); });
   } else {
     map.removeLayer(satLayer);
     map.removeLayer(labels);
     osmLayer.addTo(map);
     if (trackLine) trackLine.setStyle({color: '#2563eb'});
+    if (pointMarkers) pointMarkers.eachLayer(function(l) { l.setStyle({color: '#2563eb', fillColor: '#2563eb'}); });
   }
 });
 
@@ -236,14 +238,13 @@ if (points.length > 0) {
   latlngs = points.map(function(p) { return [p.lat, p.lng]; });
   trackLine = L.polyline(latlngs, {color: '#00f5d4', weight: 4, opacity: 0.8}).addTo(map);
 
-  var step = Math.max(1, Math.floor(points.length / 30));
-  for (var i = 0; i < points.length; i += step) {
-    (function(j) {
-      L.circleMarker([points[j].lat, points[j].lng], {
-        radius: 4, color: '#458fff', fill: true,
-        fillColor: '#458fff', fillOpacity: 0.8, weight: 1
-      }).addTo(map).bindTooltip('#' + j).on('click', function() { showInfo(j); });
-    })(i);
+  // Show every point as tiny dot
+  pointMarkers = L.layerGroup().addTo(map);
+  for (var i = 0; i < points.length; i++) {
+    L.circleMarker([points[i].lat, points[i].lng], {
+      radius: 1.5, color: '#00f5d4', fill: true,
+      fillColor: '#00f5d4', fillOpacity: 0.25, weight: 1
+    }).addTo(pointMarkers);
   }
 } else {
   latlngs = [];
