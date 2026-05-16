@@ -125,8 +125,9 @@ def main():
                 pass
         base = meta.get('name', 'edited_track.kmz').replace('.kmz', '_edited.kmz')
         out_kmz = os.path.join(DIR, base)
-        # Copy original KMZ and add any extra media files
-        shutil.copy2(ORIG_KMZ, out_kmz)
+        out_tmp = out_kmz + '.tmp'
+        # Write to temp then atomically rename
+        shutil.copy2(ORIG_KMZ, out_tmp)
         files_dir = os.path.join(DIR, 'files')
         if os.path.isdir(files_dir):
             added = 0
@@ -139,6 +140,7 @@ def main():
                         added += 1
             if added:
                 print(f"Added {added} media files to output")
+        os.replace(out_tmp, out_kmz)
         os.remove(edits_path)
         print(f"Copied original to {out_kmz}")
         return
@@ -209,9 +211,10 @@ def main():
             pass
     base = meta.get('name', 'edited_track.kmz').replace('.kmz', '_edited.kmz')
     out_kmz = os.path.join(DIR, base)
+    out_tmp = out_kmz + '.tmp'
     print(f"Creating KMZ: {out_kmz}")
     
-    with zipfile.ZipFile(out_kmz, 'w', zipfile.ZIP_DEFLATED) as zout:
+    with zipfile.ZipFile(out_tmp, 'w', zipfile.ZIP_DEFLATED) as zout:
         # Copy files from original KMZ
         with zipfile.ZipFile(ORIG_KMZ, 'r') as zin:
             for item in zin.infolist():
@@ -231,6 +234,7 @@ def main():
     
     shutil.rmtree(temp_dir)
     os.remove(edits_path)
+    os.replace(out_tmp, out_kmz)
     print(f"Done! Output: {out_kmz}")
 
 if __name__ == '__main__':
