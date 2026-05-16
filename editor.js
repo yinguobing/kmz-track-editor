@@ -252,12 +252,12 @@ if (points.length > 0) {
 
 function nearestLL(latlng) {
   if (points.length === 0) return null;
-  var d = Infinity, n = null;
+  var d = Infinity, n = null, threshold = 60; // meters
   for (var i = 0; i < points.length; i++) {
     var dist = map.distance(latlng, [points[i].lat, points[i].lng]);
     if (dist < d) { d = dist; n = i; }
   }
-  return n;
+  return d <= threshold ? n : null;
 }
 
 function showInfo(i) {
