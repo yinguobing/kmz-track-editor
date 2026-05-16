@@ -421,7 +421,7 @@ function refreshDelList() {
   var countEl = document.getElementById('delCount');
   
   if (removals.length === 0) {
-    el.innerHTML = '';
+    el.innerHTML = '<div class="empty">尚未删除任何路径</div>';
     if (footer) footer.style.display = 'none';
     return;
   }
