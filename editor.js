@@ -387,9 +387,10 @@ if (points.length > 0) {
   setDropZonePersistent(true);
 }
 
-// Update stats and file info
+// Update stats, file info, and deletion list
 updateStats();
 renderFileInfo();
+refreshDelList();
 
 }  // end initEditor
 
