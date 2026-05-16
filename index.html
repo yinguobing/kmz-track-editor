@@ -33,7 +33,7 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--canvas);color:var(--ink);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
 #app{display:flex;height:100vh;width:100vw;position:relative}
-#map{flex:1;z-index:1;min-width:0}
+#map{flex:1;min-width:0}
 #panel{width:300px;min-width:200px;max-width:500px;height:100vh;overflow-y:auto;background:transparent;display:flex;flex-direction:column;z-index:10;margin-left:-300px;position:relative}
 
 /* Sidebar - floating cards over map */
@@ -74,7 +74,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 .file-info .placeholder .icon{font-size:28px;display:block;margin-bottom:8px}
 
 /* Map switch */
-.map-switch{position:absolute;bottom:24px;right:24px;z-index:1000;display:flex;gap:0;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.35)}
+.map-switch{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;gap:0;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.35)}
 .map-switch button{padding:6px 14px;border:none;background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;transition:all 0.15s;outline:none;border-right:1px solid var(--border)}
 .map-switch button:last-child{border-right:none}
 .map-switch button.active{background:var(--coral);color:#fff}
@@ -195,6 +195,6 @@ select:hover,select:focus{border-color:var(--coral)}
 
 
 
-<script src="/editor.js?v=2"></script>
+<script src="/editor.js?v=3"></script>
 </body>
 </html>
