@@ -5,9 +5,8 @@ function updateStats() {
 }
 
 // ===== State =====
-var map, osmLayer, satLayer, labels, activeLabels, latlngs, trackLine;
+var map, osmLayer, satLayer, labels, latlngs, trackLine;
 var removals = [], selStart = null, selEnd = null, selMarkers = [], removedLines = [];
-var clearSel;
 var rawData = [];
 var dragCounter = 0;
 var fileMeta = {};
@@ -24,14 +23,6 @@ function isClickOnUI(origEvent) {
 }
 
 // Show/hide overlay with message
-function showOverlay(msg) {
-  document.getElementById('overlayText').textContent = msg;
-  document.getElementById('overlay').style.display = 'flex';
-}
-function hideOverlay() {
-  document.getElementById('overlay').style.display = 'none';
-}
-
 // Prevent mouse wheel from zooming map when scrolling panel/list
 document.getElementById('panel').addEventListener('wheel', function(e) {
   e.stopPropagation();
@@ -217,7 +208,7 @@ satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Wor
 labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
 satLayer.addTo(map);
 labels.addTo(map);
-activeLabels = labels;
+
 
 // Map layer switch buttons
 document.getElementById('mapSwitch').addEventListener('click', function(e) {
@@ -232,11 +223,11 @@ document.getElementById('mapSwitch').addEventListener('click', function(e) {
     map.removeLayer(osmLayer);
     satLayer.addTo(map);
     labels.addTo(map);
-    activeLabels = labels;
+    
   } else {
     map.removeLayer(satLayer);
     map.removeLayer(labels);
-    activeLabels = null;
+
     osmLayer.addTo(map);
   }
 });
