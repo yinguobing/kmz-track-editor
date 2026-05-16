@@ -359,6 +359,16 @@ if (points.length > 0) {
     }
     updateSel();
   });
+
+  // Cursor feedback: show pointer when mouse is near the track
+  var cursorTick = 0;
+  map.on('mousemove', function(e) {
+    // Throttle: check every 3rd move (~20 checks/sec)
+    cursorTick++;
+    if (cursorTick % 3 !== 0) return;
+    var isNear = nearestLL(e.latlng) !== null;
+    map.getContainer().style.cursor = isNear ? 'pointer' : '';
+  });
 }
 
 
