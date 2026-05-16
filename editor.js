@@ -11,6 +11,7 @@ var rawData = [];
 var dragCounter = 0;
 var fileMeta = {};
 var points = [];
+var waypoints = [];
 
 // ===== Helpers =====
 
@@ -43,6 +44,12 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
   points = [];
   initEditor();
 });
+
+// Load waypoints
+fetch('/waypoints.json').then(function(r){return r.json();}).then(function(d){
+  waypoints = d;
+  // renderWaypoints will be called from initEditor once the map exists
+}).catch(function(){});
 
 // Compute total distance (Haversine)
 function computeDistance(data) {
@@ -101,6 +108,48 @@ function escHtml(s) {
   var d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+// ===== Waypoints =====
+function renderWaypoints() {
+  if (waypoints.length === 0 || !map) return;
+  
+  for (var i = 0; i < waypoints.length; i++) {
+    var wp = waypoints[i];
+    // Create diamond icon
+    var icon = L.divIcon({
+      className: 'wp-icon',
+      html: '<div class="wp-diamond"></div>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+    
+    var m = L.marker([wp.lat, wp.lng], {icon: icon});
+    m.bindTooltip(escHtml(wp.name), {sticky: true});
+    m.on('click', function(w) {
+      return function() {
+        var html = '<div class="wp-popup">' +
+          '<h3>' + escHtml(w.name) + '</h3>';
+        if (w.desc) {
+          html += '<div class="desc">' + w.desc + '</div>';
+        }
+        // Media
+        for (var j = 0; j < w.media.length; j++) {
+          var src = w.media[j];
+          if (src.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+            html += '<img src="/' + src + '" alt="" loading="lazy">';
+          } else {
+            html += '<div style="color:var(--amber);font-size:11px;padding:4px 0">▶ ' + src.split('/').pop() + '</div>';
+          }
+        }
+        html += '</div>';
+        this.unbindTooltip();
+        this.bindPopup(html, {maxWidth: 360, className: ''}).openPopup();
+      };
+    }(wp));
+    
+    m.addTo(map);
+  }
 }
 
 // Drop zone helpers
@@ -438,10 +487,11 @@ if (points.length > 0) {
   setDropZonePersistent(true);
 }
 
-// Update stats, file info, and deletion list
+// Update stats, file info, deletion list, and waypoints
 updateStats();
 renderFileInfo();
 refreshDelList();
+renderWaypoints();
 
 }  // end initEditor
 

@@ -21,7 +21,7 @@ import shutil, tempfile, re
 ORIG_KMZ = '/home/yinjie/下载/20260514_103430.kmz'
 
 def rebuild_from_kmz(kmz_path, orig_filename=None):
-    """Extract track data from KMZ and save as track_data.json. No HTML patching needed."""
+    """Extract track + waypoints + media from KMZ."""
     import zipfile
     try:
         with zipfile.ZipFile(kmz_path, 'r') as z:
@@ -35,8 +35,7 @@ def rebuild_from_kmz(kmz_path, orig_filename=None):
     name_match = re.search(r'<name>(.*?)</name>', kml)
     track_name = name_match.group(1).strip() if name_match else '未命名轨迹'
     
-    # Extract all gx:coord and when pairs
-    # Handle two formats: alternating when/coord and block format (all whens then all coords)
+    # === Extract gx:Track points ===
     tracks = re.findall(r'<gx:Track>.*?</gx:Track>', kml, re.DOTALL)
     if not tracks:
         return None
@@ -58,7 +57,7 @@ def rebuild_from_kmz(kmz_path, orig_filename=None):
     if not points:
         return None
     
-    # Save as JSON
+    # Save track data
     json_path = os.path.join(DIR, 'track_data.json')
     with open(json_path, 'w') as f:
         json.dump(points, f)
@@ -72,13 +71,90 @@ def rebuild_from_kmz(kmz_path, orig_filename=None):
         if os.path.exists(fpath):
             os.remove(fpath)
     
-    # Save original filename for download naming
+    # Save original filename
     meta_path = os.path.join(DIR, 'upload_meta.json')
     save_name = orig_filename or os.path.basename(kmz_path)
     with open(meta_path, 'w') as f:
         json.dump({'name': save_name}, f)
     
+    # === Extract waypoints and media ===
+    _extract_waypoints_and_media(kmz_path, kml)
+    
     return '已加载 "' + track_name + '"（' + str(len(points)) + ' 个轨迹点）'
+
+
+def _extract_waypoints_and_media(kmz_path, kml):
+    """Extract Placemark waypoints and associated media files from KMZ."""
+    import zipfile
+    waypoints = []
+    media_refs = set()
+    
+    placemarks = re.findall(r'<Placemark[^>]*>.*?</Placemark>', kml, re.DOTALL)
+    
+    for pm in placemarks:
+        # Skip gx:Track placemarks (waypoints have <Point> element)
+        if '<gx:Track>' in pm:
+            continue
+        if '<Point>' not in pm:
+            continue
+        
+        name_m = re.search(r'<name>(.*?)</name>', pm, re.DOTALL)
+        desc_m = re.search(r'<description>(.*?)</description>', pm, re.DOTALL)
+        coord_m = re.search(r'<coordinates>(.*?)</coordinates>', pm, re.DOTALL)
+        
+        name = name_m.group(1).strip() if name_m else '未命名'
+        desc = ''
+        if desc_m:
+            desc = desc_m.group(1).strip()
+            # Decode HTML entities
+            desc = desc.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"')
+        
+        lat, lng, alt = 0, 0, 0
+        if coord_m:
+            parts = coord_m.group(1).strip().split(',')
+            if len(parts) >= 2:
+                lng = float(parts[0])
+                lat = float(parts[1])
+                alt = float(parts[2]) if len(parts) > 2 else 0
+        
+        # Collect media references
+        wp_media = []
+        for m in re.finditer(r'<img[^>]+src="([^"]+)"', desc):
+            wp_media.append(m.group(1))
+            media_refs.add(m.group(1))
+        for m in re.finditer(r'<embed[^>]+src="([^"]+)"', desc):
+            wp_media.append(m.group(1))
+            media_refs.add(m.group(1))
+        
+        waypoints.append({
+            'name': name,
+            'lat': lat,
+            'lng': lng,
+            'alt': alt,
+            'desc': desc,
+            'media': wp_media
+        })
+    
+    # Save waypoints.json
+    wp_path = os.path.join(DIR, 'waypoints.json')
+    with open(wp_path, 'w', encoding='utf-8') as f:
+        json.dump(waypoints, f, ensure_ascii=False, indent=2)
+    
+    # Extract media files from KMZ
+    files_dir = os.path.join(DIR, 'files')
+    os.makedirs(files_dir, exist_ok=True)
+    
+    with zipfile.ZipFile(kmz_path, 'r') as z:
+        for ref in media_refs:
+            # ref is like 'files/gerImage_xxx.jpg'
+            target = os.path.join(DIR, ref)
+            try:
+                data = z.read(ref)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with open(target, 'wb') as f:
+                    f.write(data)
+            except KeyError:
+                pass  # media file not in archive
 
 def get_orig_filename():
     '''Get the original uploaded KMZ filename from saved metadata.'''
