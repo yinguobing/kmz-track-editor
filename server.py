@@ -369,13 +369,19 @@ class Handler(BaseHTTPRequestHandler):
             fname = unquote(os.path.basename(path))
             fpath = os.path.join(DIR, fname)
             if os.path.exists(fpath):
+                fsize = os.path.getsize(fpath)
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/vnd.google-earth.kmz')
                 self.send_header('Content-Disposition', f'attachment; filename="{fname}"')
+                self.send_header('Content-Length', str(fsize))
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 with open(fpath, 'rb') as f:
-                    self.wfile.write(f.read())
+                    while True:
+                        chunk = f.read(65536)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
                 return
             self.send_error(404)
             return
