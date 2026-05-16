@@ -584,7 +584,7 @@ document.getElementById('btnDownload').onclick = function() {
   fetch('/api/apply-edits', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({removals: removals, totalPts: points.length})
+    body: JSON.stringify({removals: removals, totalPts: points.length, wpDeleted: wpDeleted})
   }).then(function(r) { return r.json(); }).then(function(data) {
     document.getElementById('overlayText').textContent = '处理完成，正在导出...';
     setTimeout(function() {

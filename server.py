@@ -280,11 +280,13 @@ class Handler(BaseHTTPRequestHandler):
             total_pts = data.get('totalPts', 3373)
             
             # Save the removals to a temp file for the background process
+            wpDeleted = data.get('wpDeleted', [])
             info = {
                 'removals': removals,
                 'totalPts': total_pts,
                 'timestamp': time.time(),
-                'origFilename': get_orig_filename()
+                'origFilename': get_orig_filename(),
+                'wpDeleted': wpDeleted
             }
             with open(os.path.join(DIR, 'pending_edits.json'), 'w') as f:
                 json.dump(info, f)

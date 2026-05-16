@@ -112,6 +112,22 @@ def main():
         info = json.load(f)
     
     removals = info.get('removals', [])
+    wpDeleted = info.get('wpDeleted', [])
+    
+    # Get media to skip (from deleted waypoints)
+    skip_media = set()
+    wp_path = os.path.join(DIR, 'waypoints.json')
+    if wpDeleted and os.path.exists(wp_path):
+        try:
+            with open(wp_path, encoding='utf-8') as f:
+                wps = json.load(f)
+            for idx in wpDeleted:
+                if idx < len(wps):
+                    for m in wps[idx].get('media', []):
+                        skip_media.add(os.path.basename(m))
+        except:
+            pass
+    
     if not removals:
         print("No removals to apply, copying original")
         # Just copy the original as output
@@ -135,7 +151,7 @@ def main():
                 existing = set(zout.namelist())
                 for fname in os.listdir(files_dir):
                     arc_path = 'files/' + fname
-                    if arc_path not in existing:
+                    if arc_path not in existing and fname not in skip_media:
                         zout.write(os.path.join(files_dir, fname), arc_path)
                         added += 1
             if added:
