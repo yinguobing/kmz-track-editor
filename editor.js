@@ -48,7 +48,7 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
 // Load waypoints
 fetch('/waypoints.json').then(function(r){return r.json();}).then(function(d){
   waypoints = d;
-  // renderWaypoints will be called from initEditor once the map exists
+  renderWaypoints();
 }).catch(function(){});
 
 // Compute total distance (Haversine)
