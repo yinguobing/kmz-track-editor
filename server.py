@@ -19,7 +19,7 @@ MIME = {
 
 
 import shutil, tempfile, re
-ORIG_KMZ = '/home/yinjie/下载/20260514_103430.kmz'
+ORIG_KMZ = os.path.join(DIR, 'original.kmz')
 
 def rebuild_from_kmz(kmz_path, orig_filename=None):
     """Extract track + waypoints + media from KMZ."""

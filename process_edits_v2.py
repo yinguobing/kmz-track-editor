@@ -13,7 +13,7 @@ gx_ns = 'http://www.google.com/kml/ext/2.2'
 ET.register_namespace('', ns)
 ET.register_namespace('gx', gx_ns)
 
-ORIG_KMZ = '/home/yinjie/下载/20260514_103430.kmz'
+ORIG_KMZ = os.path.join(DIR, 'original.kmz')
 
 def get_segment_boundaries(orig_kml):
     """Get global index ranges for each gx:Track segment."""
