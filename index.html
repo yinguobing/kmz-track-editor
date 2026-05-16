@@ -159,6 +159,12 @@ select:hover,select:focus{border-color:var(--coral)}
       <!-- 文件信息 -->
       <div class="file-info" id="fileInfo"></div>
       
+      <!-- 底图切换 -->
+      <div class="map-switch" id="mapSwitch" style="flex-shrink:0;padding:10px 16px;border-bottom:1px solid var(--border)">
+        <button data-map="satellite" class="active">卫星地图</button>
+        <button data-map="osm">标准地图</button>
+      </div>
+      
       <!-- 已删除列表（弹性填充） -->
       <div class="section-scroll">
         <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
@@ -168,12 +174,8 @@ select:hover,select:focus{border-color:var(--coral)}
         <div id="removalsList" class="del-list"></div>
       </div>
       
-      <!-- 底部：底图切换 + 导出（固定） -->
+      <!-- 底部：统计 + 导出（固定） -->
       <div class="section-export">
-        <div class="map-switch" id="mapSwitch">
-          <button data-map="satellite" class="active">卫星地图</button>
-          <button data-map="osm">标准地图</button>
-        </div>
         <div class="stats-row" id="statsRow">
           <span>总 <b id="totalPts">0</b></span>
           <span>已删 <b class="red" id="delPts">0</b></span>
