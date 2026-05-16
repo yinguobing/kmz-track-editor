@@ -376,12 +376,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-Length', str(fsize))
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
+                import shutil
                 with open(fpath, 'rb') as f:
-                    while True:
-                        chunk = f.read(65536)
-                        if not chunk:
-                            break
-                        self.wfile.write(chunk)
+                    shutil.copyfileobj(f, self.wfile, 262144)
                 return
             self.send_error(404)
             return
