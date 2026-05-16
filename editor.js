@@ -1,8 +1,9 @@
 function updateStats() {
-  document.getElementById('totalPts').textContent = P.length;
+  var el;
+  el = document.getElementById('totalPts'); if (el) el.textContent = P.length;
   var d = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
-  document.getElementById('delPts').textContent = d;
-  document.getElementById('finalPts').textContent = P.length - d;
+  el = document.getElementById('delPts'); if (el) el.textContent = d;
+  el = document.getElementById('finalPts'); if (el) el.textContent = P.length - d;
 }
 
 var trackName = "两步路轨迹编辑器";
