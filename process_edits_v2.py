@@ -142,8 +142,15 @@ def main():
         base = meta.get('name', 'edited_track.kmz').replace('.kmz', '_edited.kmz')
         out_kmz = os.path.join(DIR, base)
         out_tmp = out_kmz + '.tmp'
-        # Write to temp then atomically rename
-        shutil.copy2(ORIG_KMZ, out_tmp)
+        # Rebuild zip filtering out media from deleted waypoints
+        with zipfile.ZipFile(ORIG_KMZ, 'r') as zin:
+            with zipfile.ZipFile(out_tmp, 'w', zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    base = os.path.basename(item.filename)
+                    if base in skip_media:
+                        continue
+                    zout.writestr(item, zin.read(item.filename))
+        # Also add media files from files/ directory
         files_dir = os.path.join(DIR, 'files')
         if os.path.isdir(files_dir):
             added = 0
