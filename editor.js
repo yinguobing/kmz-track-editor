@@ -318,15 +318,15 @@ function updateSel() {
   selMarkers = [];
   if (selStart != null && selEnd != null) {
     var s = Math.min(selStart, selEnd), e = Math.max(selStart, selEnd);
-    var sl = L.polyline(latlngs.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.9}).addTo(map);
+    var sl = L.polyline(latlngs.slice(s, e + 1), {color: '#facc15', weight: 6, opacity: 0.9}).addTo(map);
     sl.on('click', function() {
       if (selStart !== null && selEnd !== null) updateSelInfo(selStart, selEnd);
     });
     selMarkers.push(sl);
-    var sm1 = L.circleMarker([points[s].lat, points[s].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(map);
+    var sm1 = L.circleMarker([points[s].lat, points[s].lng], {radius: 8, color: '#facc15', fill: true, fillColor: '#facc15', fillOpacity: 1, weight: 2}).addTo(map);
     sm1.bindTooltip('#' + s);
     selMarkers.push(sm1);
-    var sm2 = L.circleMarker([points[e].lat, points[e].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(map);
+    var sm2 = L.circleMarker([points[e].lat, points[e].lng], {radius: 8, color: '#facc15', fill: true, fillColor: '#facc15', fillOpacity: 1, weight: 2}).addTo(map);
     sm2.bindTooltip('#' + e);
     selMarkers.push(sm2);
     fitBoundsWithPanel(sl.getBounds());
