@@ -377,6 +377,8 @@ document.getElementById('btnDownload').onclick = function() {
   });
 };
 
+document.getElementById('btnClear').onclick = clearAllDeletions;
+
 if (points.length > 0) {
   map.fitBounds(trackLine.getBounds(), {padding: [30, 30]});
   setDropZonePersistent(false);
@@ -452,6 +454,18 @@ function undoDelete(idx) {
       break;
     }
   }
+  updateStats();
+  refreshDelList();
+}
+
+function clearAllDeletions() {
+  if (removals.length === 0) return;
+  for (var i = 0; i < removedLines.length; i++) {
+    map.removeLayer(removedLines[i]);
+  }
+  removedLines = [];
+  removals = [];
+  localStorage.removeItem('trackEditor_removals');
   updateStats();
   refreshDelList();
 }
