@@ -366,6 +366,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self._send_json(400, {'success': False, 'error': '未找到文件内容'})
     
+
     def do_GET(self):
         path = urlparse(self.path).path
         
@@ -379,6 +380,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-Disposition', f'attachment; filename="{fname}"')
                 self.send_header('Content-Length', str(fsize))
                 self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Accept-Ranges', 'bytes')
                 self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
                 self.end_headers()
                 import shutil
