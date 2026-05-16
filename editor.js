@@ -185,6 +185,7 @@ document.addEventListener('drop', function(e) {
     .then(function(d) {
       if (d.success) {
         document.getElementById('overlayText').textContent = '加载完成，正在刷新...';
+        localStorage.removeItem('trackEditor_removals');
         setTimeout(function() { location.reload(); }, 1500);
       } else {
         overlay.style.display = 'none';
