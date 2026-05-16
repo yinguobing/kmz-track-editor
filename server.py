@@ -245,8 +245,12 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data).encode())
     
     def do_POST(self):
-        # Route to upload handler for /upload path
         parsed = urlparse(self.path)
+        # Media file upload to files/
+        if parsed.path == '/upload-file':
+            self.do_POST_file()
+            return
+        # KMZ upload
         if parsed.path == '/upload':
             self.do_POST_upload(parsed.path)
             return
@@ -294,6 +298,50 @@ class Handler(BaseHTTPRequestHandler):
                 'success': False, 'error': str(e),
                 'traceback': traceback.format_exc()
             }).encode())
+    
+    def do_POST_file(self):
+        """Handle generic file upload to files/ directory."""
+        import cgi
+        ctype, pdict = cgi.parse_header(self.headers.get('Content-Type', ''))
+        if ctype != 'multipart/form-data':
+            self._send_json(400, {'success': False, 'error': 'Expected multipart/form-data'})
+            return
+        
+        boundary = self.headers.get('Content-Type', '').split('boundary=')[-1].strip()
+        body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
+        boundary_bytes = f'--{boundary}'.encode()
+        parts = body.split(boundary_bytes)
+        
+        saved = []
+        for part in parts:
+            if b'Content-Disposition' not in part:
+                continue
+            # Extract filename
+            fname_match = re.search(rb'filename="([^"]*)"', part)
+            if not fname_match:
+                continue
+            fname = fname_match.group(1).decode('utf-8', errors='replace')
+            if not fname:
+                continue
+            # Extract file content
+            marker = b'\r\n\r\n'
+            idx = part.find(marker)
+            if idx == -1:
+                continue
+            content = part[idx + len(marker):]
+            # Strip trailing boundary markers
+            content = content.rstrip(b'\r\n- \t')
+            
+            target = os.path.join(DIR, 'files', fname)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with open(target, 'wb') as f:
+                f.write(content)
+            saved.append(fname)
+        
+        if saved:
+            self._send_json(200, {'success': True, 'message': f'已保存 {len(saved)} 个文件: {", ".join(saved)}'})
+        else:
+            self._send_json(400, {'success': False, 'error': '未找到文件内容'})
     
     def do_GET(self):
         path = urlparse(self.path).path

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>文件上传</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,system-ui,sans-serif;background:#181d26;color:#f8fafc;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+h2{color:#fcab79;margin-bottom:20px}
+.upload-box{background:#22252b;border:1px solid #333840;border-radius:10px;padding:24px;max-width:400px;width:100%}
+input[type=file]{color:#e0e2e5;font-size:13px;margin-bottom:10px;width:100%}
+button{background:#aa2d00;color:#fff;border:none;border-radius:9999px;padding:8px 20px;font-size:13px;cursor:pointer;width:100%}
+button:hover{background:#922700}
+#status{margin-top:12px;font-size:12px;color:#9297a0}
+.success{color:#39bf45!important}
+.error{color:#e04848!important}
+a{color:#fcab79;margin-top:16px;font-size:12px}
+</style>
+</head>
+<body>
+<h2>📁 上传媒体文件</h2>
+<div class="upload-box">
+  <form id="uploadForm" enctype="multipart/form-data" action="/upload-file" method="post">
+    <input type="file" name="file" required><br><br>
+    <button type="submit">上传到 files/</button>
+  </form>
+  <div id="status"></div>
+</div>
+<a href="/">← 返回轨迹编辑器</a>
+<script>
+document.getElementById('uploadForm').onsubmit = async function(e) {
+  e.preventDefault();
+  var st = document.getElementById('status');
+  st.innerHTML = '⏳ 上传中...';
+  st.className = '';
+  try {
+    var r = await fetch('/upload-file', {method:'POST', body:new FormData(this)});
+    var d = await r.json();
+    st.innerHTML = d.success ? '✅ ' + d.message : '❌ ' + d.error;
+    st.className = d.success ? 'success' : 'error';
+  } catch(e) {
+    st.innerHTML = '❌ ' + e.message;
+    st.className = 'error';
+  }
+};
+</script>
+</body>
+</html>
