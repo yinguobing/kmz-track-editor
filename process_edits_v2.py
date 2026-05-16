@@ -113,7 +113,21 @@ def main():
     
     removals = info.get('removals', [])
     if not removals:
-        print("No removals to apply")
+        print("No removals to apply, copying original")
+        # Just copy the original as output
+        meta_path = os.path.join(DIR, 'upload_meta.json')
+        meta = {}
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path) as f:
+                    meta = json.load(f)
+            except:
+                pass
+        base = meta.get('name', 'edited_track.kmz').replace('.kmz', '_edited.kmz')
+        out_kmz = os.path.join(DIR, base)
+        shutil.copy2(ORIG_KMZ, out_kmz)
+        os.remove(edits_path)
+        print(f"Copied original to {out_kmz}")
         return
     
     print(f"Applying {len(removals)} removal ranges...")
