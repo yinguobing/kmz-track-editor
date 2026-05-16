@@ -236,15 +236,26 @@ document.getElementById('mapSwitch').addEventListener('click', function(e) {
 
 if (points.length > 0) {
   latlngs = points.map(function(p) { return [p.lat, p.lng]; });
-  trackLine = L.polyline(latlngs, {color: '#00f5d4', weight: 4, opacity: 0.8}).addTo(map);
+  trackLine = L.polyline(latlngs, {color: '#00f5d4', weight: 5, opacity: 0.8}).addTo(map);
 
-  // Show every point as tiny dot
+  // Tiny dots: show every point for visual density
   pointMarkers = L.layerGroup().addTo(map);
   for (var i = 0; i < points.length; i++) {
     L.circleMarker([points[i].lat, points[i].lng], {
-      radius: 1.5, color: '#00f5d4', fill: true,
-      fillColor: '#00f5d4', fillOpacity: 0.25, weight: 1
+      radius: 2, color: '#00f5d4', fill: true,
+      fillColor: '#00f5d4', fillOpacity: 0.2, weight: 1
     }).addTo(pointMarkers);
+  }
+
+  // Interactive markers at intervals (larger, clickable)
+  var step = Math.max(1, Math.floor(points.length / 50));
+  for (var i = 0; i < points.length; i += step) {
+    (function(j) {
+      L.circleMarker([points[j].lat, points[j].lng], {
+        radius: 5, color: '#00f5d4', fill: true,
+        fillColor: '#00f5d4', fillOpacity: 0.7, weight: 2
+      }).addTo(pointMarkers).bindTooltip('#' + j, {sticky: true}).on('click', function() { showInfo(j); });
+    })(i);
   }
 } else {
   latlngs = [];
