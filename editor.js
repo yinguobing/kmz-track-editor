@@ -32,6 +32,11 @@ function hideOverlay() {
   document.getElementById('overlay').style.display = 'none';
 }
 
+// Prevent mouse wheel from zooming map when scrolling panel/list
+document.getElementById('panel').addEventListener('wheel', function(e) {
+  e.stopPropagation();
+}, {passive: true});
+
 // ===== Data Loading =====
 fetch('/upload_meta.json').then(function(r){return r.json();}).then(function(d){
   fileMeta = d;
