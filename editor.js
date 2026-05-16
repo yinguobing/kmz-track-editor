@@ -497,6 +497,10 @@ if (points.length > 0) {
   hoverDot.bindTooltip('', {sticky: true});
   var hoverIdx = -1, hoverTick = 0;
   map.on('mousemove', function(e) {
+    if (!trackVisible) {
+      if (hoverIdx !== -1) { hoverDot.setLatLng([0, 0]); hoverIdx = -1; map.getContainer().style.cursor = ''; }
+      return;
+    }
     hoverTick++;
     if (hoverTick % 2 !== 0) return;
     if (isClickOnUI(e.originalEvent)) {
