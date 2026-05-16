@@ -1,47 +1,60 @@
+// Update stats shown in panel (points count, deletion count)
 function updateStats() {
-  var el;
-  el = document.getElementById('totalPts'); if (el) el.textContent = P.length;
-  var d = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
-  el = document.getElementById('delPts'); if (el) el.textContent = d;
-  el = document.getElementById('finalPts'); if (el) el.textContent = P.length - d;
+  var el, del = removals.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
+  el = document.getElementById('delPts'); if (el) el.textContent = del;
 }
 
-var trackName = "两步路轨迹编辑器";
-// Global vars for map state - assigned in initEditor
-var mm, osm, sat, labels, activeLabels, pts, pl;
-var rv = [], ss = null, se = null, sm = [], removedLines = [];
+// ===== State =====
+var map, osmLayer, satLayer, labels, activeLabels, latlngs, trackLine;
+var removals = [], selStart = null, selEnd = null, selMarkers = [], removedLines = [];
 var clearSel;
-var DATA = [];  // loaded from track_data.json
+var rawData = [];
 var dragCounter = 0;
-var fileMeta = {};  // name from upload_meta.json
+var fileMeta = {};
+var points = [];
 
-var P = [];
+// ===== Helpers =====
 
-// Load file metadata (original filename)
+// Check if a click event originated from panel or mapTools (should be ignored)
+function isClickOnUI(origEvent) {
+  if (!origEvent) return false;
+  var t = origEvent.target;
+  if (!t) return false;
+  return document.getElementById('panel').contains(t) || document.getElementById('mapTools').contains(t);
+}
+
+// Show/hide overlay with message
+function showOverlay(msg) {
+  document.getElementById('overlayText').textContent = msg;
+  document.getElementById('overlay').style.display = 'flex';
+}
+function hideOverlay() {
+  document.getElementById('overlay').style.display = 'none';
+}
+
+// ===== Data Loading =====
 fetch('/upload_meta.json').then(function(r){return r.json();}).then(function(d){
   fileMeta = d;
-  // Re-render file info in case it was rendered before meta loaded
   renderFileInfo();
 }).catch(function(){});
 
-// Load track data from JSON
 fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
-  DATA = d;
-  P = DATA.map(function(d){return{idx:d[0],lat:d[1],lng:d[2],alt:d[3],time:d[4]};});
+  rawData = d;
+  points = rawData.map(function(d){return{idx:d[0],lat:d[1],lng:d[2],alt:d[3],time:d[4]};});
   initEditor();
 }).catch(function(e){
   console.warn('No track data loaded, showing drop zone:', e);
-  P = [];
+  points = [];
   initEditor();
 });
 
 // Compute total distance (Haversine)
-function computeDistance(pts) {
-  if (pts.length < 2) return 0;
-  function rad(d) { return d * Math.PI / 180; }
+function computeDistance(data) {
+  if (data.length < 2) return 0;
+  function rad(deg) { return deg * Math.PI / 180; }
   var total = 0;
-  for (var i = 1; i < pts.length; i++) {
-    var p1 = pts[i - 1], p2 = pts[i];
+  for (var i = 1; i < data.length; i++) {
+    var p1 = data[i - 1], p2 = data[i];
     var dlat = rad(p2[1] - p1[1]);
     var dlon = rad(p2[2] - p1[2]);
     var a = Math.sin(dlat / 2) * Math.sin(dlat / 2) +
@@ -64,19 +77,19 @@ function formatDate(iso) {
 function renderFileInfo() {
   var el = document.getElementById('fileInfo');
   if (!el) return;
-  if (P.length === 0) {
+  if (points.length === 0) {
     el.innerHTML = '<div class="placeholder"><span class="icon">📂</span>暂无轨迹<br>拖放 KMZ 文件到地图</div>';
     return;
   }
-  var name = fileMeta.name || DATA._name || '轨迹';
+  var name = fileMeta.name || rawData._name || '轨迹';
   if (name.endsWith('.kmz')) name = name.slice(0, -4);
-  var date = formatDate(P[0].time);
-  var dist = computeDistance(DATA);
+  var date = formatDate(points[0].time);
+  var dist = computeDistance(rawData);
   var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
     '<div class="meta-row"><span class="label">记录时间</span> ' + date + '</div>' +
     '<div class="meta-row"><span class="label">轨迹长度</span> ' + distStr + '</div>' +
-    '<div class="meta-row"><span class="label">轨迹点数</span> ' + P.length + '</div>';
+    '<div class="meta-row"><span class="label">轨迹点数</span> ' + points.length + '</div>';
 }
 
 function escHtml(s) {
@@ -125,7 +138,7 @@ document.addEventListener('dragleave', function(e) {
   dragCounter--;
   if (dragCounter <= 0) {
     dragCounter = 0;
-    if (P.length === 0) {
+    if (points.length === 0) {
       // Keep permanent hint visible, but remove active highlight
       setDropZonePersistent(true);
     } else {
@@ -137,7 +150,7 @@ document.addEventListener('dragleave', function(e) {
 document.addEventListener('drop', function(e) {
   e.preventDefault();
   dragCounter = 0;
-  if (P.length > 0) {
+  if (points.length > 0) {
     hideDropZone();
   } else {
     setDropZonePersistent(true);
@@ -181,13 +194,13 @@ document.addEventListener('drop', function(e) {
 function initEditor() {
 
 // Initialize map
-mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false});
+map = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false});
 
-osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
-sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
+osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
+satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
 labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
-sat.addTo(mm);
-labels.addTo(mm);
+satLayer.addTo(map);
+labels.addTo(map);
 activeLabels = labels;
 
 // Map layer switch buttons
@@ -200,70 +213,67 @@ document.getElementById('mapSwitch').addEventListener('click', function(e) {
   btn.classList.add('active');
   // Switch layer
   if (val == 'satellite') {
-    mm.removeLayer(osm);
-    sat.addTo(mm);
-    labels.addTo(mm);
+    map.removeLayer(osmLayer);
+    satLayer.addTo(map);
+    labels.addTo(map);
     activeLabels = labels;
   } else {
-    mm.removeLayer(sat);
-    mm.removeLayer(labels);
+    map.removeLayer(satLayer);
+    map.removeLayer(labels);
     activeLabels = null;
-    osm.addTo(mm);
+    osmLayer.addTo(map);
   }
 });
 
-if (P.length > 0) {
-  pts = P.map(function(p) { return [p.lat, p.lng]; });
-  pl = L.polyline(pts, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(mm);
+if (points.length > 0) {
+  latlngs = points.map(function(p) { return [p.lat, p.lng]; });
+  trackLine = L.polyline(latlngs, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(map);
 
-  var step = Math.max(1, Math.floor(P.length / 30));
-  for (var i = 0; i < P.length; i += step) {
+  var step = Math.max(1, Math.floor(points.length / 30));
+  for (var i = 0; i < points.length; i += step) {
     (function(j) {
-      L.circleMarker([P[j].lat, P[j].lng], {
+      L.circleMarker([points[j].lat, points[j].lng], {
         radius: 4, color: '#458fff', fill: true,
         fillColor: '#458fff', fillOpacity: 0.8, weight: 1
-      }).addTo(mm).bindTooltip('#' + j).on('click', function() { showInfo(j); });
+      }).addTo(map).bindTooltip('#' + j).on('click', function() { showInfo(j); });
     })(i);
   }
 } else {
-  pts = [];
+  latlngs = [];
 }
 
 function nearestLL(latlng) {
-  if (P.length === 0) return null;
+  if (points.length === 0) return null;
   var d = Infinity, n = null;
-  for (var i = 0; i < P.length; i++) {
-    var dist = mm.distance(latlng, [P[i].lat, P[i].lng]);
+  for (var i = 0; i < points.length; i++) {
+    var dist = map.distance(latlng, [points[i].lat, points[i].lng]);
     if (dist < d) { d = dist; n = i; }
   }
   return n;
 }
 
 function showInfo(i) {
-  var latlng = L.latLng(P[i].lat, P[i].lng);
+  var latlng = L.latLng(points[i].lat, points[i].lng);
   var popupContent = '<div style="font-size:12px;line-height:1.6">' +
     '<b>#' + i + '</b><br>' +
-    '时间: ' + P[i].time + '<br>' +
-    '纬度: ' + P[i].lat.toFixed(6) + '<br>' +
-    '经度: ' + P[i].lng.toFixed(6) + '<br>' +
-    '海拔: ' + P[i].alt + 'm' +
+    '时间: ' + points[i].time + '<br>' +
+    '纬度: ' + points[i].lat.toFixed(6) + '<br>' +
+    '经度: ' + points[i].lng.toFixed(6) + '<br>' +
+    '海拔: ' + points[i].alt + 'm' +
     '<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">' +
     '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); clearSel()" style="background:var(--border);border:none;color:var(--ink);border-radius:999px;padding:3px 10px;font-size:11px;cursor:pointer">取消</button>' +
     '</div></div>';
   L.popup({closeButton: true, maxWidth: 300})
     .setLatLng(latlng)
     .setContent(popupContent)
-    .openOn(mm);
+    .openOn(map);
 }
 
-if (P.length > 0) {
-  pl.on('click', function(e) {
-    if (e.originalEvent) {
-      var t = e.originalEvent.target;
-      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapTools').contains(t))) return;
-    }
-    if (ss !== null && se !== null) {
-      updateSelInfo(ss, se);
+if (points.length > 0) {
+  trackLine.on('click', function(e) {
+    if (isClickOnUI(e.originalEvent)) return;
+    if (selStart !== null && selEnd !== null) {
+      updateSelInfo(selStart, selEnd);
       return;
     }
     var i = nearestLL(e.latlng);
@@ -271,14 +281,14 @@ if (P.length > 0) {
   });
 }
 
-// ss, se, sm, rv, removedLines declared at global scope
+// selStart, selEnd, selMarkers, removals, removedLines declared at global scope
 
 // Restore deletion marks from localStorage on page load
 (function() {
   var saved = localStorage.getItem('trackEditor_removals');
   if (saved) {
     try {
-      rv = JSON.parse(saved);
+      removals = JSON.parse(saved);
     } catch(e) {}
   }
 })();
@@ -287,59 +297,56 @@ if (P.length > 0) {
 
 
 clearSel = function() {
-  ss = null; se = null;
-  sm.forEach(function(x) { mm.removeLayer(x); });
-  sm = [];
+  selStart = null; selEnd = null;
+  selMarkers.forEach(function(x) { map.removeLayer(x); });
+  selMarkers = [];
   updateSelInfo(null, null);
   }
 
 
 
 function updateSel() {
-  sm.forEach(function(x) { mm.removeLayer(x); });
-  sm = [];
-  if (ss != null && se != null) {
-    var s = Math.min(ss, se), e = Math.max(ss, se);
-    var sl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.9}).addTo(mm);
+  selMarkers.forEach(function(x) { map.removeLayer(x); });
+  selMarkers = [];
+  if (selStart != null && selEnd != null) {
+    var s = Math.min(selStart, selEnd), e = Math.max(selStart, selEnd);
+    var sl = L.polyline(latlngs.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.9}).addTo(map);
     sl.on('click', function() {
-      if (ss !== null && se !== null) updateSelInfo(ss, se);
+      if (selStart !== null && selEnd !== null) updateSelInfo(selStart, selEnd);
     });
-    sm.push(sl);
-    var sm1 = L.circleMarker([P[s].lat, P[s].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(mm);
+    selMarkers.push(sl);
+    var sm1 = L.circleMarker([points[s].lat, points[s].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(map);
     sm1.bindTooltip('#' + s);
-    sm.push(sm1);
-    var sm2 = L.circleMarker([P[e].lat, P[e].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(mm);
+    selMarkers.push(sm1);
+    var sm2 = L.circleMarker([points[e].lat, points[e].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(map);
     sm2.bindTooltip('#' + e);
-    sm.push(sm2);
-    mm.fitBounds(sl.getBounds(), {padding: [30, 30]});
-  } else if (ss != null) {
-    var sm1 = L.circleMarker([P[ss].lat, P[ss].lng], {radius: 8, color: '#f59e0b', fill: true, fillColor: '#f59e0b', fillOpacity: 1, weight: 2}).addTo(mm);
-    sm1.bindTooltip('#' + ss);
-    sm.push(sm1);
+    selMarkers.push(sm2);
+    map.fitBounds(sl.getBounds(), {padding: [30, 30]});
+  } else if (selStart != null) {
+    var sm1 = L.circleMarker([points[selStart].lat, points[selStart].lng], {radius: 8, color: '#f59e0b', fill: true, fillColor: '#f59e0b', fillOpacity: 1, weight: 2}).addTo(map);
+    sm1.bindTooltip('#' + selStart);
+    selMarkers.push(sm1);
   }
 }
 
-if (P.length > 0) {
-  mm.on('click', function(e) {
+if (points.length > 0) {
+  map.on('click', function(e) {
     // Ignore clicks on panel or map-switch (event bubbling)
-    if (e.originalEvent) {
-      var t = e.originalEvent.target;
-      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapTools').contains(t))) return;
-    }
+    if (isClickOnUI(e.originalEvent)) return;
     var i = nearestLL(e.latlng);
     if (i == null) return;
-    if (ss == null) {
-      ss = i;
+    if (selStart == null) {
+      selStart = i;
       showInfo(i);
-    } else if (se == null && ss != null) {
-      if (i == ss) {
-        ss = null;
+    } else if (selEnd == null && selStart != null) {
+      if (i == selStart) {
+        selStart = null;
         clearSel();
         updateSelInfo(null, null);
       } else {
-        se = i;
-        var s = Math.min(ss, se), e = Math.max(ss, se);
-        updateSelInfo(ss, se);
+        selEnd = i;
+        var s = Math.min(selStart, selEnd), e = Math.max(selStart, selEnd);
+        updateSelInfo(selStart, selEnd);
       }
     }
     updateSel();
@@ -350,12 +357,12 @@ if (P.length > 0) {
 
 document.getElementById('btnDownload').onclick = function() {
   var overlay = document.getElementById('overlay');
-  document.getElementById('overlayText').textContent = '正在处理 ' + rv.length + ' 个删除范围...';
+  document.getElementById('overlayText').textContent = '正在处理 ' + removals.length + ' 个删除范围...';
   overlay.style.display = 'flex';
   fetch('/api/apply-edits', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({removals: rv, totalPts: P.length})
+    body: JSON.stringify({removals: removals, totalPts: points.length})
   }).then(function(r) { return r.json(); }).then(function(data) {
     document.getElementById('overlayText').textContent = '处理完成，正在导出...';
     setTimeout(function() {
@@ -364,17 +371,17 @@ document.getElementById('btnDownload').onclick = function() {
     }, 2000);
   }).catch(function(e) {
     overlay.style.display = 'none';
-    var txt = JSON.stringify(rv);
+    var txt = JSON.stringify(removals);
     alert('请将以下内容复制发送给小满：\n\n' + txt);
     prompt('发送给小满', txt);
   });
 };
 
-if (P.length > 0) {
-  mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
+if (points.length > 0) {
+  map.fitBounds(trackLine.getBounds(), {padding: [30, 30]});
   setDropZonePersistent(false);
 } else {
-  mm.setView([35, 110], 4);
+  map.setView([35, 110], 4);
   setDropZonePersistent(true);
 }
 
@@ -391,7 +398,7 @@ function updateSelInfo(s, e) {
   }
   var st = Math.min(s, e), en = Math.max(s, e);
   var cnt = en - st + 1;
-  var p1 = P[st], p2 = P[en];
+  var p1 = points[st], p2 = points[en];
   var mlat = (p1.lat + p2.lat) / 2;
   var mlng = (p1.lng + p2.lng) / 2;
   var html = '<div style="font-size:12px;line-height:1.6">' +
@@ -402,20 +409,20 @@ function updateSelInfo(s, e) {
     '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); confirmDelete()" style="background:var(--coral);color:#fff;border:none;border-radius:999px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">删除</button>' +
     '<button onclick="document.querySelector(\'.leaflet-popup-close-button\').click(); clearSel()" style="background:var(--surface-soft);border:1px solid var(--border);color:var(--ink);border-radius:999px;padding:4px 14px;font-size:11px;cursor:pointer;font-weight:500">重置</button>' +
     '</div></div>';
-  L.popup({closeButton: true, maxWidth: 300}).setLatLng([mlat, mlng]).setContent(html).openOn(mm);
+  L.popup({closeButton: true, maxWidth: 300}).setLatLng([mlat, mlng]).setContent(html).openOn(map);
 }
 
 
 function refreshDelList() {
   var el = document.getElementById('removalsList');
-  document.getElementById('delListCount').textContent = rv.length + ' \u6bb5';
-  if (rv.length === 0) {
+  document.getElementById('delListCount').textContent = removals.length + ' \u6bb5';
+  if (removals.length === 0) {
     el.innerHTML = '<div class="empty">\u6682\u65e0\u5220\u9664\u8def\u5f84</div>';
     return;
   }
   var h = '';
-  for (var i = rv.length - 1; i >= 0; i--) {
-    var r = rv[i];
+  for (var i = removals.length - 1; i >= 0; i--) {
+    var r = removals[i];
     var cnt = r.end - r.start + 1;
     h += '<div class="item" data-idx="' + i + '">' +
       '<span class="label">#' + r.start + '\u2192#' + r.end + ' <span >(' + cnt + ')</span></span>' +
@@ -428,19 +435,19 @@ function refreshDelList() {
     div.addEventListener('click', function(e) {
       if (e.target.tagName === 'BUTTON') return;
       var idx = parseInt(this.dataset.idx);
-      var r = rv[idx];
+      var r = removals[idx];
       highlightRange(r.start, r.end);
     });
   });
 }
 
 function undoDelete(idx) {
-  var r = rv[idx];
-  rv.splice(idx, 1);
-  localStorage.setItem('trackEditor_removals', JSON.stringify(rv));
+  var r = removals[idx];
+  removals.splice(idx, 1);
+  localStorage.setItem('trackEditor_removals', JSON.stringify(removals));
   for (var i = 0; i < removedLines.length; i++) {
     if (removedLines[i]._delInfo && removedLines[i]._delInfo.start === r.start && removedLines[i]._delInfo.end === r.end) {
-      mm.removeLayer(removedLines[i]);
+      map.removeLayer(removedLines[i]);
       removedLines.splice(i, 1);
       break;
     }
@@ -450,21 +457,21 @@ function undoDelete(idx) {
 }
 
 function highlightRange(s, e) {
-  if (window._hlLine) { mm.removeLayer(window._hlLine); }
-  window._hlLine = L.polyline(pts.slice(s, e + 1), {color: '#fbbf24', weight: 8, opacity: 0.9}).addTo(mm);
-  mm.fitBounds(window._hlLine.getBounds(), {padding: [30, 30]});
+  if (window._hlLine) { map.removeLayer(window._hlLine); }
+  window._hlLine = L.polyline(latlngs.slice(s, e + 1), {color: '#fbbf24', weight: 8, opacity: 0.9}).addTo(map);
+  map.fitBounds(window._hlLine.getBounds(), {padding: [30, 30]});
   setTimeout(function() {
-    if (window._hlLine) { mm.removeLayer(window._hlLine); window._hlLine = null; }
+    if (window._hlLine) { map.removeLayer(window._hlLine); window._hlLine = null; }
   }, 3000);
 }
 
 function confirmDelete() {
-  if (ss === null || se === null) { return; }
-  var s = Math.min(ss, se), e = Math.max(ss, se);
-  rv.push({start:s, end:e});
-  localStorage.setItem('trackEditor_removals', JSON.stringify(rv));
+  if (selStart === null || selEnd === null) { return; }
+  var s = Math.min(selStart, selEnd), e = Math.max(selStart, selEnd);
+  removals.push({start:s, end:e});
+  localStorage.setItem('trackEditor_removals', JSON.stringify(removals));
   updateStats();
-  var rl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.7}).addTo(mm);
+  var rl = L.polyline(latlngs.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.7}).addTo(map);
   removedLines.push(rl);
   rl._delInfo = {start: s, end: e};
   updateSelInfo(null, null);
@@ -475,37 +482,7 @@ function confirmDelete() {
 
 
 
-// Sidebar resize
-(function(){
-  var handle = document.getElementById('resizeHandle');
-  var panel = document.getElementById('panel');
-  if (!handle || !panel) { /* panel not found */ return; }
-  var isDragging = false;
-  
-  handle.addEventListener('mousedown', function(e) {
-    isDragging = true;
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  });
-  
-  document.addEventListener('mousemove', function(e) {
-    if (!isDragging) return;
-    var width = Math.max(200, Math.min(500, e.clientX));
-    panel.style.width = width + 'px';
-  });
-  
-  document.addEventListener('mouseup', function() {
-    if (isDragging) {
-      isDragging = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      // Trigger map resize
-      if (typeof mm !== 'undefined') {
-        setTimeout(function() { mm.invalidateSize(); }, 50);
-      }
-    }
-  });
-})();
+
 
 
 
