@@ -68,10 +68,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 .file-info .placeholder .icon{font-size:28px;display:block;margin-bottom:8px}
 
 /* Map switch */
-.map-switch{display:flex;gap:4px;margin-bottom:10px}
-.map-switch button{flex:1;padding:5px 0;border-radius:999px;border:1px solid var(--border);background:var(--canvas);color:var(--muted);font-size:11px;cursor:pointer;transition:all 0.15s;outline:none}
-.map-switch button.active{background:var(--surface-soft);border-color:var(--coral);color:var(--ink)}
-.map-switch button:hover:not(.active){border-color:var(--border-strong)}
+.map-switch{position:absolute;bottom:24px;right:24px;z-index:1000;display:flex;gap:0;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.35)}
+.map-switch button{padding:6px 14px;border:none;background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;transition:all 0.15s;outline:none;border-right:1px solid var(--border)}
+.map-switch button:last-child{border-right:none}
+.map-switch button.active{background:var(--coral);color:#fff}
+.map-switch button:hover:not(.active){background:var(--border)}
 
 .btn-peach{background:var(--peach);color:var(--canvas);font-weight:600}
 .btn-peach:hover{background:#f09a65}
@@ -145,6 +146,10 @@ select:hover,select:focus{border-color:var(--coral)}
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
 <div id="app" >
   <div id="map">
+    <div class="map-switch" id="mapSwitch">
+      <button data-map="satellite" class="active">卫星地图</button>
+      <button data-map="osm">标准地图</button>
+    </div>
     <div id="dropZone">
       <div class="hint">
         <span class="icon">📂</span>
@@ -159,11 +164,7 @@ select:hover,select:focus{border-color:var(--coral)}
       <!-- 文件信息 -->
       <div class="file-info" id="fileInfo"></div>
       
-      <!-- 底图切换 -->
-      <div class="map-switch" id="mapSwitch" style="flex-shrink:0;padding:10px 16px;border-bottom:1px solid var(--border)">
-        <button data-map="satellite" class="active">卫星地图</button>
-        <button data-map="osm">标准地图</button>
-      </div>
+
       
       <!-- 已删除列表（弹性填充） -->
       <div class="section-scroll">
