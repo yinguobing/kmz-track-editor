@@ -141,7 +141,23 @@ function showTrackDesc() {
   var box = document.createElement('div');
   box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:420px;width:90%;color:var(--body);font-size:13px;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,0.5)';
   box.onclick = function(e) { e.stopPropagation(); };
-  box.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:14px;font-weight:600;color:var(--ink)">路线介绍</span><span style="cursor:pointer;color:var(--muted);font-size:16px" onclick="document.body.removeChild(this.closest(\'[style*=\\'z-index:5000\'\'))">✕</span></div><div style="color:var(--body)">' + escHtml(trackInfo.desc) + '</div>';
+  // Build popup content using DOM (avoid inline onclick escaping issues)
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px';
+  var hTitle = document.createElement('span');
+  hTitle.style.cssText = 'font-size:14px;font-weight:600;color:var(--ink)';
+  hTitle.textContent = '路线介绍';
+  var hClose = document.createElement('span');
+  hClose.style.cssText = 'cursor:pointer;color:var(--muted);font-size:16px';
+  hClose.textContent = '✕';
+  hClose.onclick = function() { document.body.removeChild(ov); descOverlay = null; };
+  hdr.appendChild(hTitle);
+  hdr.appendChild(hClose);
+  box.appendChild(hdr);
+  var bBody = document.createElement('div');
+  bBody.style.color = 'var(--body)';
+  bBody.textContent = trackInfo.desc;
+  box.appendChild(bBody);
   ov.appendChild(box);
   document.body.appendChild(ov);
   descOverlay = ov;
