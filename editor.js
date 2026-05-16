@@ -209,7 +209,8 @@ document.addEventListener('drop', function(e) {
 function initEditor() {
 
 // Initialize map
-map = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false});
+map = L.map('map', {zoomControl: false, maxZoom: 20, attributionControl: false});
+L.control.zoom({position: 'topleft', zoomInTitle: '放大地图', zoomOutTitle: '缩小地图'}).addTo(map);
 
 osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
 satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
