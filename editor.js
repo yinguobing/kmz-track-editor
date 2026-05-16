@@ -103,8 +103,8 @@ function renderFileInfo() {
     '<div class="file-metrics">' +
       '<div class="metric"><div class="metric-label">轨迹长度</div><div class="metric-value">' + distStr + '</div></div>' +
       '<div class="metric"><div class="metric-label">轨迹点数</div><div class="metric-value">' + points.length.toLocaleString() + '</div></div>' +
-    '</div>' +
-    '<div class="wp-summary">📍 ' + wpCount + ' 个标注点</div>';
+      '<div class="metric"><div class="metric-label">标注点</div><div class="metric-value" style="font-size:16px">' + wpCount + '</div></div>' +
+    '</div>';
 }
 
 function escHtml(s) {
