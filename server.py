@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os, sys, json, traceback, subprocess, time
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 PORT = 8899
 DIR = os.path.dirname(os.path.abspath(__file__))
@@ -366,7 +366,7 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         
         if path.startswith('/download/'):
-            fname = os.path.basename(path)
+            fname = unquote(os.path.basename(path))
             fpath = os.path.join(DIR, fname)
             if os.path.exists(fpath):
                 self.send_response(200)
