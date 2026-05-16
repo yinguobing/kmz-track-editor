@@ -49,6 +49,7 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
 fetch('/waypoints.json').then(function(r){return r.json();}).then(function(d){
   waypoints = d;
   renderWaypoints();
+  renderFileInfo();
 }).catch(function(){});
 
 // Compute total distance (Haversine)
@@ -96,12 +97,14 @@ function renderFileInfo() {
   var date = formatDate(points[0].time);
   var dist = computeDistance(rawData);
   var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
+  var wpCount = waypoints.length;
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
     '<div class="sub">' + date + '</div>' +
     '<div class="file-metrics">' +
       '<div class="metric"><div class="metric-label">轨迹长度</div><div class="metric-value">' + distStr + '</div></div>' +
       '<div class="metric"><div class="metric-label">轨迹点数</div><div class="metric-value">' + points.length.toLocaleString() + '</div></div>' +
-    '</div>';
+    '</div>' +
+    '<div class="wp-summary">📍 ' + wpCount + ' 个标注点</div>';
 }
 
 function escHtml(s) {
