@@ -113,11 +113,29 @@ select:hover,select:focus{border-color:var(--coral)}
 .leaflet-control-zoom{border:none!important}
 /* Resize handle */
 #resizeHandle{position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;z-index:1000;background:transparent}
+
+/* Drop zone overlay on map */
+#dropZone{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2000;display:flex;align-items:center;justify-content:center;transition:opacity 0.25s;pointer-events:none;opacity:0}
+#dropZone.active{opacity:1;pointer-events:auto;background:rgba(24,29,38,0.7);backdrop-filter:blur(3px)}
+#dropZone.permanent{opacity:1;pointer-events:auto}
+#dropZone .hint{border:2px dashed var(--border-strong);border-radius:16px;padding:36px 48px;text-align:center;background:rgba(29,31,37,0.92);max-width:320px;transition:all 0.25s}
+#dropZone.active .hint{border-color:var(--coral);border-style:solid;background:rgba(170,45,0,0.08)}
+#dropZone .hint .icon{font-size:40px;display:block;margin-bottom:10px}
+#dropZone .hint b{color:var(--ink);font-size:14px}
+#dropZone .hint .sub{color:var(--muted);font-size:12px;margin-top:6px;line-height:1.5}
 </style></head>
 <body >
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
 <div id="app" >
-  <div id="map"></div>
+  <div id="map">
+    <div id="dropZone">
+      <div class="hint">
+        <span class="icon">📂</span>
+        <b>拖放 KMZ 文件到此处</b>
+        <div class="sub">支持两步路导出的 .kmz 轨迹文件</div>
+      </div>
+    </div>
+  </div>
   <div id="panel" id="panel">
     <div id="panel-header" >
       <span class="track-icon">&#9998;</span> <span>两步路轨迹编辑器</span>
@@ -151,27 +169,12 @@ select:hover,select:focus{border-color:var(--coral)}
           <span>已删 <b class="red" id="delPts">0</b></span>
           <span>最终 <b class="green" id="finalPts">0</b></span>
         </div>
-        <div class="btn-group">
-          <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('uploadModal').style.display='flex'">导入</button>
-          <button class="btn btn-primary" style="flex:1" id="btnDownload">导出</button>
-        </div>
+        <button class="btn btn-primary btn-full" style="flex:1" id="btnDownload">导出 edited.kmz</button>
       </div></div>
   </div>
 </div>
 
-<!-- Upload Modal -->
-<div id="uploadModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:4000;background:rgba(15,23,42,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;max-width:420px;width:90%">
-    <h3 style="margin:0 0 4px;font-size:16px;color:var(--ink)">上传 KMZ 轨迹</h3>
-    <p style="margin:0 0 16px;color:var(--muted);font-size:13px">支持两步路导出的 .kmz 文件</p>
-    <form id="uploadForm" enctype="multipart/form-data">
-      <input type="file" name="kmz" accept=".kmz" required style="margin:8px 0;color:var(--ink);font-size:13px"><br>
-      <button type="submit" class="btn btn-primary" style="padding:8px 24px;margin-top:4px">上传并加载</button>
-    </form>
-    <div id="uploadStatus" style="margin-top:12px;font-size:13px"></div>
-    <button onclick="document.getElementById('uploadModal').style.display='none'" class="btn btn-gray" style="margin-top:8px;padding:4px 16px">取消</button>
-  </div>
-</div>
+
 
 <script src="/editor.js"></script>
 </body>

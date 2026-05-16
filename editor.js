@@ -1,16 +1,8 @@
-function updateStatsWithLocalStorage() {
-  var saved = localStorage.getItem("trackEditor_removals");
-  if (saved) {
-    try {
-      rv = JSON.parse(saved);
-      if (rv.length > 0) {
-        var d = rv.reduce(function(a,r){return a+r.end-r.start+1}, 0);
-        document.getElementById("delPts").textContent = d;
-        document.getElementById("finalPts").textContent = P.length - d;
-        
-      }
-    } catch(e) {}
-  }
+function updateStats() {
+  document.getElementById('totalPts').textContent = P.length;
+  var d = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
+  document.getElementById('delPts').textContent = d;
+  document.getElementById('finalPts').textContent = P.length - d;
 }
 
 var trackName = "两步路轨迹编辑器";
@@ -19,7 +11,7 @@ var mm, osm, sat, labels, activeLabels, pts, pl;
 var rv = [], ss = null, se = null, sm = [], removedLines = [];
 var clearSel;
 var DATA = [];  // loaded from track_data.json
-
+var dragCounter = 0;
 
 var P = [];
 
@@ -27,19 +19,110 @@ var P = [];
 fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
   DATA = d;
   P = DATA.map(function(d){return{idx:d[0],lat:d[1],lng:d[2],alt:d[3],time:d[4]};});
-  updateStatsWithLocalStorage();
   initEditor();
 }).catch(function(e){
-  console.warn('No track data, upload a KMZ file:', e);
-  P=[];
-  
+  console.warn('No track data loaded, showing drop zone:', e);
+  P = [];
+  initEditor();
 });
 
-// Initialize map (called after data loads)
+// Drop zone helpers
+function showDropZone() {
+  var dz = document.getElementById('dropZone');
+  if (!dz) return;
+  dz.classList.add('active');
+}
+
+function hideDropZone() {
+  var dz = document.getElementById('dropZone');
+  if (!dz) return;
+  dz.classList.remove('active');
+}
+
+function setDropZonePersistent(show) {
+  var dz = document.getElementById('dropZone');
+  if (!dz) return;
+  if (show) {
+    dz.classList.add('permanent');
+  } else {
+    dz.classList.remove('permanent');
+    dz.classList.remove('active');
+  }
+}
+
+// Document-level drag-and-drop events (handles file drop anywhere on window)
+document.addEventListener('dragenter', function(e) {
+  e.preventDefault();
+  dragCounter++;
+  showDropZone();
+});
+
+document.addEventListener('dragover', function(e) {
+  e.preventDefault();
+});
+
+document.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    if (P.length === 0) {
+      // Keep permanent hint visible, but remove active highlight
+      setDropZonePersistent(true);
+    } else {
+      hideDropZone();
+    }
+  }
+});
+
+document.addEventListener('drop', function(e) {
+  e.preventDefault();
+  dragCounter = 0;
+  if (P.length > 0) {
+    hideDropZone();
+  } else {
+    setDropZonePersistent(true);
+  }
+
+  var files = e.dataTransfer.files;
+  if (!files || files.length === 0) return;
+
+  var file = files[0];
+  if (!file.name.toLowerCase().endsWith('.kmz')) {
+    alert('请拖入 .kmz 格式的轨迹文件');
+    return;
+  }
+
+  // Show processing overlay
+  var overlay = document.getElementById('overlay');
+  document.getElementById('overlayText').textContent = '正在处理 ' + file.name + ' ...';
+  overlay.style.display = 'flex';
+
+  var fd = new FormData();
+  fd.append('kmz', file);
+
+  fetch('/upload', {method: 'POST', body: fd})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        document.getElementById('overlayText').textContent = '加载完成，正在刷新...';
+        setTimeout(function() { location.reload(); }, 1500);
+      } else {
+        overlay.style.display = 'none';
+        alert('处理失败: ' + d.error);
+      }
+    })
+    .catch(function(err) {
+      overlay.style.display = 'none';
+      alert('上传失败: ' + err.message);
+    });
+});
+
+// Initialize map (called always, even when no data)
 function initEditor() {
 
 // Initialize map
-mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false}).setView([38.972362000000004, 112.4864345], 12);
+mm = L.map('map', {zoomControl: true, maxZoom: 20, attributionControl: false});
 
 osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM', maxZoom: 20});
 sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri', maxZoom: 20, maxNativeZoom: 17});
@@ -62,20 +145,25 @@ document.getElementById('mapSelect').onchange = function() {
   }
 };
 
-pts = P.map(function(p) { return [p.lat, p.lng]; });
-pl = L.polyline(pts, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(mm);
+if (P.length > 0) {
+  pts = P.map(function(p) { return [p.lat, p.lng]; });
+  pl = L.polyline(pts, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(mm);
 
-var step = Math.max(1, Math.floor(P.length / 30));
-for (var i = 0; i < P.length; i += step) {
-  (function(j) {
-    L.circleMarker([P[j].lat, P[j].lng], {
-      radius: 4, color: '#458fff', fill: true,
-      fillColor: '#458fff', fillOpacity: 0.8, weight: 1
-    }).addTo(mm).bindTooltip('#' + j).on('click', function() { showInfo(j); });
-  })(i);
+  var step = Math.max(1, Math.floor(P.length / 30));
+  for (var i = 0; i < P.length; i += step) {
+    (function(j) {
+      L.circleMarker([P[j].lat, P[j].lng], {
+        radius: 4, color: '#458fff', fill: true,
+        fillColor: '#458fff', fillOpacity: 0.8, weight: 1
+      }).addTo(mm).bindTooltip('#' + j).on('click', function() { showInfo(j); });
+    })(i);
+  }
+} else {
+  pts = [];
 }
 
 function nearestLL(latlng) {
+  if (P.length === 0) return null;
   var d = Infinity, n = null;
   for (var i = 0; i < P.length; i++) {
     var dist = mm.distance(latlng, [P[i].lat, P[i].lng]);
@@ -101,15 +189,17 @@ function showInfo(i) {
     .openOn(mm);
 }
 
-pl.on('click', function(e) {
-  // If a range is selected, reopen range popup
-  if (ss !== null && se !== null) {
-    updateSelInfo(ss, se);
-    return;
-  }
-  var i = nearestLL(e.latlng);
-  if (i != null) showInfo(i);
-});
+if (P.length > 0) {
+  pl.on('click', function(e) {
+    // If a range is selected, reopen range popup
+    if (ss !== null && se !== null) {
+      updateSelInfo(ss, se);
+      return;
+    }
+    var i = nearestLL(e.latlng);
+    if (i != null) showInfo(i);
+  });
+}
 
 // ss, se, sm, rv, removedLines declared at global scope
 
@@ -119,12 +209,6 @@ pl.on('click', function(e) {
   if (saved) {
     try {
       rv = JSON.parse(saved);
-      if (rv.length > 0) {
-        
-        var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
-        document.getElementById('delPts').textContent = del;
-        document.getElementById('finalPts').textContent = P.length - del;
-      }
     } catch(e) {}
   }
 })();
@@ -165,27 +249,27 @@ function updateSel() {
   }
 }
 
-mm.on('click', function(e) {
-  // Always in selection mode
-  var i = nearestLL(e.latlng);
-  if (i == null) return;
-  if (ss == null) {
-    ss = i;
-    showInfo(i);
-  } else if (se == null && ss != null) {
-    if (i == ss) {
-      ss = null;
-      clearSel();
-      updateSelInfo(null, null);
-    } else {
-      se = i;
-      var s = Math.min(ss, se), e = Math.max(ss, se);
-      // Range info shown on map via updateSelInfo + s + '</b> &rarr; <b>#' + e + '</b> (' + (e - s + 1) + ' pts)';
-            updateSelInfo(ss, se);
+if (P.length > 0) {
+  mm.on('click', function(e) {
+    var i = nearestLL(e.latlng);
+    if (i == null) return;
+    if (ss == null) {
+      ss = i;
+      showInfo(i);
+    } else if (se == null && ss != null) {
+      if (i == ss) {
+        ss = null;
+        clearSel();
+        updateSelInfo(null, null);
+      } else {
+        se = i;
+        var s = Math.min(ss, se), e = Math.max(ss, se);
+        updateSelInfo(ss, se);
+      }
     }
-  }
-  updateSel();
-});
+    updateSel();
+  });
+}
 
 
 
@@ -211,7 +295,16 @@ document.getElementById('btnDownload').onclick = function() {
   });
 };
 
-mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
+if (P.length > 0) {
+  mm.fitBounds(pl.getBounds(), {padding: [30, 30]});
+  setDropZonePersistent(false);
+} else {
+  mm.setView([35, 110], 4);
+  setDropZonePersistent(true);
+}
+
+// Update stats
+updateStats();
 
 }  // end initEditor
 
@@ -276,9 +369,7 @@ function undoDelete(idx) {
       break;
     }
   }
-  var del = rv.reduce(function(a, r2) { return a + r2.end - r2.start + 1; }, 0);
-  document.getElementById('delPts').textContent = del;
-  document.getElementById('finalPts').textContent = P.length - del;
+  updateStats();
   refreshDelList();
 }
 
@@ -296,9 +387,7 @@ function confirmDelete() {
   var s = Math.min(ss, se), e = Math.max(ss, se);
   rv.push({start:s, end:e});
   localStorage.setItem('trackEditor_removals', JSON.stringify(rv));
-  var del = rv.reduce(function(a, r) { return a + r.end - r.start + 1; }, 0);
-  document.getElementById('delPts').textContent = del;
-  document.getElementById('finalPts').textContent = P.length - del;
+  updateStats();
   var rl = L.polyline(pts.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.7}).addTo(mm);
   removedLines.push(rl);
   rl._delInfo = {start: s, end: e};
@@ -343,34 +432,4 @@ function confirmDelete() {
 })();
 
 
-// Upload modal handler
-document.addEventListener('DOMContentLoaded', function() {
-  var form = document.getElementById('uploadForm');
-  if (!form) return;
-  
-  form.onsubmit = async function(e) {
-    e.preventDefault();
-    var st = document.getElementById('uploadStatus');
-    st.innerHTML = '⏳ 正在上传处理...';
-    st.style.color = '#94a3b8';
-    var fd = new FormData(this);
-    try {
-      var r = await fetch('/upload', {method:'POST', body:fd});
-      var d = await r.json();
-      if (d.success) {
-        st.innerHTML = '✅ ' + d.message;
-        st.style.color = '#22c55e';
-        setTimeout(function() {
-          document.getElementById('uploadModal').style.display = 'none';
-          location.reload();
-        }, 1500);
-      } else {
-        st.innerHTML = '❌ 失败: ' + d.error;
-        st.style.color = '#ef4444';
-      }
-    } catch(e) {
-      st.innerHTML = '❌ 网络错误: ' + e.message;
-      st.style.color = '#ef4444';
-    }
-  };
-});
+
