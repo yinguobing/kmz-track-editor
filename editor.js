@@ -70,6 +70,13 @@ function computeDistance(data) {
   return total;
 }
 
+// Fit map bounds accounting for sidebar panel overlay
+function fitBoundsWithPanel(bounds, extra) {
+  var pw = (document.getElementById('panel') || {}).offsetWidth || 300;
+  var pad = extra || 30;
+  map.fitBounds(bounds, {paddingTopLeft: [pad, pad], paddingBottomRight: [pad + pw, pad]});
+}
+
 function formatDate(iso) {
   if (!iso) return '';
   var d = new Date(iso);
@@ -329,7 +336,7 @@ function updateSel() {
     var sm2 = L.circleMarker([points[e].lat, points[e].lng], {radius: 8, color: '#ef4444', fill: true, fillColor: '#ef4444', fillOpacity: 1, weight: 2}).addTo(map);
     sm2.bindTooltip('#' + e);
     selMarkers.push(sm2);
-    map.fitBounds(sl.getBounds(), {padding: [30, 30]});
+    fitBoundsWithPanel(sl.getBounds());
   } else if (selStart != null) {
     var sm1 = L.circleMarker([points[selStart].lat, points[selStart].lng], {radius: 8, color: '#f59e0b', fill: true, fillColor: '#f59e0b', fillOpacity: 1, weight: 2}).addTo(map);
     sm1.bindTooltip('#' + selStart);
@@ -388,7 +395,7 @@ document.getElementById('btnDownload').onclick = function() {
 document.getElementById('btnClear').onclick = clearAllDeletions;
 
 if (points.length > 0) {
-  map.fitBounds(trackLine.getBounds(), {padding: [30, 30]});
+  fitBoundsWithPanel(trackLine.getBounds());
   setDropZonePersistent(false);
 } else {
   map.setView([35, 110], 4);
@@ -489,7 +496,7 @@ function clearAllDeletions() {
 function highlightRange(s, e) {
   if (window._hlLine) { map.removeLayer(window._hlLine); }
   window._hlLine = L.polyline(latlngs.slice(s, e + 1), {color: '#fbbf24', weight: 8, opacity: 0.9}).addTo(map);
-  map.fitBounds(window._hlLine.getBounds(), {padding: [30, 30]});
+  fitBoundsWithPanel(window._hlLine.getBounds());
   setTimeout(function() {
     if (window._hlLine) { map.removeLayer(window._hlLine); window._hlLine = null; }
   }, 3000);
