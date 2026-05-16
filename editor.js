@@ -259,10 +259,10 @@ function renderWaypoints() {
     
     var m = L.marker([wp.lat, wp.lng], {icon: icon});
     m.bindTooltip(escHtml(wpName), {sticky: true});
-    m.on('click', function(w, idx) {
+    m.on('click', function(w, idx, dispName) {
       return function() {
         var html = '<div class="wp-popup">' +
-          '<h3 style="margin:0;font-size:14px;color:var(--ink);font-weight:600;text-align:center">' + escHtml(wpName) + '</h3>';
+          '<h3 style="margin:0;font-size:14px;color:var(--ink);font-weight:600;text-align:center">' + escHtml(dispName) + '</h3>';
         if (w.desc) {
           var descHtml = w.desc
             .replace(/<img /g, '<img style="max-width:100%;max-height:260px;object-fit:contain" loading="lazy" ')
@@ -277,7 +277,7 @@ function renderWaypoints() {
         this.unbindTooltip();
         this.bindPopup(html, {maxWidth: 380, minWidth: 280}).openPopup();
       };
-    }(wp, i));
+    }(wp, i, wpName));
     
     m.addTo(wpGroup);
   }
