@@ -59,13 +59,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 /* File info card */
 .file-info{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
 .file-info .name{font-size:20px;font-weight:700;color:var(--peach);margin-bottom:2px;letter-spacing:0.5px}
-.file-info .sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+.file-info .sub{font-size:12px;color:var(--muted);margin-bottom:10px}
 
-/* Two-column metrics */
-.file-metrics{display:flex;gap:12px}
-.metric{flex:1;text-align:center;padding:4px 0}
-.metric-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-.metric-value{font-size:18px;font-weight:400;color:var(--cream)}
+/* Sectioned file info */
+.fl-section{margin-bottom:8px}
+.fl-section:last-child{margin-bottom:0}
+.fl-header{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
+.fl-label{font-size:11px;font-weight:600;color:var(--body);text-transform:uppercase;letter-spacing:0.8px}
+.fl-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
+.fl-key{font-size:12px;color:var(--muted)}
+.fl-val{font-size:14px;color:var(--cream);font-weight:400}
 .eye-btn{font-size:14px;cursor:pointer;opacity:0.5;transition:opacity 0.15s;line-height:1}
 .eye-btn:hover{opacity:1}
 .file-info .placeholder{text-align:center;padding:20px 0;color:var(--muted);font-size:12px}

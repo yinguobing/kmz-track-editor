@@ -103,10 +103,14 @@ function renderFileInfo() {
   var wpCount = waypoints.length;
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
     '<div class="sub">' + date + '</div>' +
-    '<div class="file-metrics">' +
-      '<div class="metric"><div class="metric-label">轨迹长度</div><div class="metric-value" style="display:flex;align-items:center;justify-content:center;gap:4px">' + distStr + '<span class="eye-btn" onclick="toggleTrack()">' + (trackVisible ? '👁' : '👁‍🗨') + '</span></div></div>' +
-      '<div class="metric"><div class="metric-label">轨迹点数</div><div class="metric-value">' + points.length.toLocaleString() + '</div></div>' +
-      '<div class="metric"><div class="metric-label">标注点</div><div class="metric-value" style="display:flex;align-items:center;justify-content:center;gap:4px">' + wpCount + '<span class="eye-btn" onclick="toggleWaypoints()">' + (wpVisible ? '👁' : '👁‍🗨') + '</span></div></div>' +
+    '<div class="fl-section">' +
+      '<div class="fl-header"><span class="fl-label">轨迹</span><span class="eye-btn" onclick="toggleTrack()">' + (trackVisible ? '👁' : '👁‍🗨') + '</span></div>' +
+      '<div class="fl-row"><span class="fl-key">长度</span><span class="fl-val">' + distStr + '</span></div>' +
+      '<div class="fl-row"><span class="fl-key">点数</span><span class="fl-val">' + points.length.toLocaleString() + '</span></div>' +
+    '</div>' +
+    '<div class="fl-section">' +
+      '<div class="fl-header"><span class="fl-label">标注点</span><span class="eye-btn" onclick="toggleWaypoints()">' + (wpVisible ? '👁' : '👁‍🗨') + '</span></div>' +
+      '<div class="fl-row"><span class="fl-key">数量</span><span class="fl-val">' + wpCount + '</span></div>' +
     '</div>';
 }
 
