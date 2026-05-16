@@ -74,8 +74,11 @@ def rebuild_from_kmz(kmz_path, orig_filename=None):
     
     # Save original filename (always use ASCII name to avoid URL encoding issues)
     meta_path = os.path.join(DIR, 'upload_meta.json')
+    save_data = {'name': 'track.kmz'}
+    if track_name:
+        save_data['displayName'] = track_name
     with open(meta_path, 'w') as f:
-        json.dump({'name': 'track.kmz'}, f)
+        json.dump(save_data, f, ensure_ascii=False)
     
     # === Extract track info (description, metadata) ===
     info_path = os.path.join(DIR, 'track_info.json')

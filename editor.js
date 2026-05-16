@@ -103,7 +103,7 @@ function renderFileInfo() {
     el.innerHTML = '<div class="placeholder"><span class="icon">📂</span>暂无轨迹<br>拖放 KMZ 文件到地图</div>';
     return;
   }
-  var name = fileMeta.name || rawData._name || '轨迹';
+  var name = fileMeta.displayName || fileMeta.name || rawData._name || '轨迹';
   if (name.endsWith('.kmz')) name = name.slice(0, -4);
   var date = formatDate(points[0].time);
   var dist = computeDistance(rawData);
