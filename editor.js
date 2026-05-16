@@ -12,6 +12,8 @@ var dragCounter = 0;
 var fileMeta = {};
 var points = [];
 var waypoints = [];
+var wpGroup;
+var wpVisible = true;
 
 // ===== Helpers =====
 
@@ -103,7 +105,7 @@ function renderFileInfo() {
     '<div class="file-metrics">' +
       '<div class="metric"><div class="metric-label">轨迹长度</div><div class="metric-value">' + distStr + '</div></div>' +
       '<div class="metric"><div class="metric-label">轨迹点数</div><div class="metric-value">' + points.length.toLocaleString() + '</div></div>' +
-      '<div class="metric"><div class="metric-label">标注点</div><div class="metric-value" style="font-size:16px">' + wpCount + '</div></div>' +
+      '<div class="metric"><div class="metric-label">标注点</div><div class="metric-value" style="font-size:16px;display:flex;align-items:center;justify-content:center;gap:4px">' + wpCount + '<span class="eye-btn" onclick="toggleWaypoints()">' + (wpVisible ? '👁' : '👁‍🗨') + '</span></div></div>' +
     '</div>';
 }
 
@@ -114,6 +116,17 @@ function escHtml(s) {
 }
 
 // ===== Waypoints =====
+function toggleWaypoints() {
+  if (!wpGroup) return;
+  wpVisible = !wpVisible;
+  if (wpVisible) {
+    map.addLayer(wpGroup);
+  } else {
+    map.removeLayer(wpGroup);
+  }
+  renderFileInfo();
+}
+
 function renderWaypoints() {
   if (waypoints.length === 0 || !map) return;
   
@@ -146,7 +159,7 @@ function renderWaypoints() {
       };
     }(wp));
     
-    m.addTo(map);
+    m.addTo(wpGroup);
   }
 }
 
@@ -284,6 +297,9 @@ document.getElementById('mapSwitch').addEventListener('click', function(e) {
 if (points.length > 0) {
   latlngs = points.map(function(p) { return [p.lat, p.lng]; });
   trackLine = L.polyline(latlngs, {color: '#00f5d4', weight: 5, opacity: 0.8}).addTo(map);
+
+  // Layer group for waypoints
+  wpGroup = L.layerGroup().addTo(map);
 
   // Show every point as tiny dot with hover tooltip
   pointMarkers = L.layerGroup().addTo(map);
