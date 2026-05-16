@@ -257,7 +257,10 @@ function showInfo(i) {
 
 if (P.length > 0) {
   pl.on('click', function(e) {
-    // If a range is selected, reopen range popup
+    if (e.originalEvent) {
+      var t = e.originalEvent.target;
+      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapSwitch').contains(t))) return;
+    }
     if (ss !== null && se !== null) {
       updateSelInfo(ss, se);
       return;
@@ -317,6 +320,11 @@ function updateSel() {
 
 if (P.length > 0) {
   mm.on('click', function(e) {
+    // Ignore clicks on panel or map-switch (event bubbling)
+    if (e.originalEvent) {
+      var t = e.originalEvent.target;
+      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapSwitch').contains(t))) return;
+    }
     var i = nearestLL(e.latlng);
     if (i == null) return;
     if (ss == null) {
