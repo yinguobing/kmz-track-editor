@@ -273,10 +273,13 @@ class Handler(BaseHTTPRequestHandler):
             with open(os.path.join(DIR, 'pending_edits.json'), 'w') as f:
                 json.dump(info, f)
             
-            # Run the edit script in background (takes time for 345MB KMZ)
+            # Run the edit script in background (fully detached)
             subprocess.Popen(
                 [sys.executable, os.path.join(DIR, 'process_edits_v2.py')],
-                cwd=DIR
+                cwd=DIR,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL
             )
             
             # Immediately respond that the edit is queued
