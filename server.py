@@ -106,8 +106,9 @@ def _extract_waypoints_and_media(kmz_path, kml):
         desc = ''
         if desc_m:
             desc = desc_m.group(1).strip()
-            # Decode HTML entities
+            # Decode HTML entities and strip CDATA
             desc = desc.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"')
+            desc = desc.replace('<![CDATA[', '').replace(']]>', '')
         
         lat, lng, alt = 0, 0, 0
         if coord_m:
