@@ -73,11 +73,9 @@ function renderFileInfo() {
   var dist = computeDistance(DATA);
   var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
-    '<div class="meta">' +
-    '<span>📅 ' + date + '</span>' +
-    '<span>📏 ' + distStr + '</span>' +
-    '<span>📍 ' + P.length + ' 点</span>' +
-    '</div>';
+    '<div class="meta-row"><span class="label">记录时间</span> ' + date + '</div>' +
+    '<div class="meta-row"><span class="label">轨迹长度</span> ' + distStr + '</div>' +
+    '<div class="meta-row"><span class="label">轨迹点数</span> ' + P.length + '</div>';
 }
 
 function escHtml(s) {
@@ -191,8 +189,16 @@ sat.addTo(mm);
 labels.addTo(mm);
 activeLabels = labels;
 
-document.getElementById('mapSelect').onchange = function() {
-  if (this.value == 'satellite') {
+// Map layer switch buttons
+document.getElementById('mapSwitch').addEventListener('click', function(e) {
+  var btn = e.target.closest('button');
+  if (!btn || !btn.dataset.map) return;
+  var val = btn.dataset.map;
+  // Update active state
+  this.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  // Switch layer
+  if (val == 'satellite') {
     mm.removeLayer(osm);
     sat.addTo(mm);
     labels.addTo(mm);
@@ -203,7 +209,7 @@ document.getElementById('mapSelect').onchange = function() {
     activeLabels = null;
     osm.addTo(mm);
   }
-};
+});
 
 if (P.length > 0) {
   pts = P.map(function(p) { return [p.lat, p.lng]; });

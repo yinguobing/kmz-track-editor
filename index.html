@@ -60,12 +60,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 /* Selection info */
 
 /* File info card */
-.file-info{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
-.file-info .name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
-.file-info .meta{font-size:11px;color:var(--muted);line-height:1.7}
-.file-info .meta span{margin-right:14px}
+.file-info{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.file-info .name{font-size:18px;font-weight:700;color:var(--peach);margin-bottom:8px;letter-spacing:0.5px}
+.file-info .meta-row{font-size:11px;color:var(--body);line-height:1.9}
+.file-info .meta-row .label{color:var(--muted)}
 .file-info .placeholder{text-align:center;padding:20px 0;color:var(--muted);font-size:12px}
 .file-info .placeholder .icon{font-size:28px;display:block;margin-bottom:8px}
+
+/* Map switch */
+.map-switch{display:flex;gap:4px;margin-bottom:10px}
+.map-switch button{flex:1;padding:5px 0;border-radius:999px;border:1px solid var(--border);background:var(--canvas);color:var(--muted);font-size:11px;cursor:pointer;transition:all 0.15s;outline:none}
+.map-switch button.active{background:var(--surface-soft);border-color:var(--coral);color:var(--ink)}
+.map-switch button:hover:not(.active){border-color:var(--border-strong)}
+
+.btn-peach{background:var(--peach);color:var(--canvas);font-weight:600}
+.btn-peach:hover{background:#f09a65}
 
 /* Deletion list */
 .del-list{font-size:11px;overflow-y:auto;flex:1;min-height:0}
@@ -163,18 +172,16 @@ select:hover,select:focus{border-color:var(--coral)}
       
       <!-- 底部：底图切换 + 导出（固定） -->
       <div class="section-export">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <select id="mapSelect" style="flex:1;padding:5px 8px;border-radius:999px;border:1px solid var(--border);background:var(--canvas);color:var(--ink);font-size:11px;outline:none;cursor:pointer">
-            <option value="satellite">卫星</option>
-            <option value="osm">标准</option>
-          </select>
+        <div class="map-switch" id="mapSwitch">
+          <button data-map="satellite" class="active">卫星地图</button>
+          <button data-map="osm">标准地图</button>
         </div>
         <div class="stats-row" id="statsRow">
           <span>总 <b id="totalPts">0</b></span>
           <span>已删 <b class="red" id="delPts">0</b></span>
           <span>最终 <b class="green" id="finalPts">0</b></span>
         </div>
-        <button class="btn btn-primary btn-full" id="btnDownload">导出</button>
+        <button class="btn btn-peach btn-full" id="btnDownload">导出</button>
       </div></div>
   </div>
 </div>
