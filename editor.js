@@ -58,6 +58,7 @@ fetch('/track_data.json').then(function(r){return r.json();}).then(function(d){
 // Load waypoints
 fetch('/waypoints.json').then(function(r){return r.json();}).then(function(d){
   waypoints = d;
+  loadWpEdits();
   renderWaypoints();
   renderFileInfo();
 }).catch(function(){});
@@ -193,11 +194,61 @@ function toggleTrack() {
   renderFileInfo();
 }
 
+// Lightweight waypoint editing (stored in localStorage)
+function saveWpEdits() {
+  localStorage.setItem('trackEditor_wpEdits', JSON.stringify({deleted: wpDeleted, edited: wpEdited}));
+}
+
+function loadWpEdits() {
+  var saved = localStorage.getItem('trackEditor_wpEdits');
+  if (saved) {
+    try {
+      var d = JSON.parse(saved);
+      wpDeleted = d.deleted || [];
+      wpEdited = d.edited || {};
+    } catch(e) {}
+  }
+}
+
+var wpDeleted = [];
+var wpEdited = {};
+
+function deleteWaypoint(idx) {
+  if (idx < 0 || idx >= waypoints.length) return;
+  if (!wpDeleted.includes(idx)) wpDeleted.push(idx);
+  saveWpEdits();
+  map.closePopup();
+  renderWaypoints();
+  renderFileInfo();
+}
+
+function editWaypoint(idx) {
+  if (idx < 0 || idx >= waypoints.length) return;
+  var wp = waypoints[idx];
+  var existing = wpEdited[idx] || {};
+  var name = prompt('编辑标注点名称：', existing.name || wp.name);
+  if (name === null) return;
+  wpEdited[idx] = {name: name};
+  saveWpEdits();
+  map.closePopup();
+  renderWaypoints();
+  renderFileInfo();
+}
+
 function renderWaypoints() {
   if (waypoints.length === 0 || !map) return;
   
+  // Clear existing markers
+  if (wpGroup) map.removeLayer(wpGroup);
+  wpGroup = L.layerGroup().addTo(map);
+  if (!wpVisible) map.removeLayer(wpGroup);
+  
   for (var i = 0; i < waypoints.length; i++) {
+    // Skip deleted waypoints
+    if (wpDeleted.includes(i)) continue;
+    
     var wp = waypoints[i];
+    var wpName = (wpEdited[i] && wpEdited[i].name) || wp.name;
     // Create diamond icon
     var icon = L.divIcon({
       className: 'wp-icon',
@@ -207,23 +258,25 @@ function renderWaypoints() {
     });
     
     var m = L.marker([wp.lat, wp.lng], {icon: icon});
-    m.bindTooltip(escHtml(wp.name), {sticky: true});
-    m.on('click', function(w) {
+    m.bindTooltip(escHtml(wpName), {sticky: true});
+    m.on('click', function(w, idx) {
       return function() {
         var html = '<div class="wp-popup">' +
-          '<h3>' + escHtml(w.name) + '</h3>';
+          '<div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:0;font-size:14px;color:var(--ink);font-weight:600">' + escHtml(wpName) + '</h3>' +
+          '<span style="font-size:11px;color:var(--muted);cursor:pointer" onclick="editWaypoint(' + idx + ')">编辑</span></div>';
         if (w.desc) {
-          // Clean desc HTML: constrain images, render embeds as video
           var descHtml = w.desc
             .replace(/<img /g, '<img style="max-width:100%;max-height:260px;object-fit:contain" loading="lazy" ')
             .replace(/<embed[^>]+src="([^"]+)"[^>]*>/gi, '<video controls style="max-width:100%;max-height:260px;border-radius:6px;margin:4px 0" preload="metadata"><source src="/$1"></video>');
-          html += '<div class="desc">' + descHtml + '</div>';
+          html += '<div class="desc" style="margin-top:6px">' + descHtml + '</div>';
         }
-        html += '</div>';
+        html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;gap:6px">' +
+          '<span style="font-size:11px;color:var(--red);cursor:pointer" onclick="deleteWaypoint(' + idx + ')">删除标注点</span></div>' +
+          '</div>';
         this.unbindTooltip();
         this.bindPopup(html, {maxWidth: 380, minWidth: 280}).openPopup();
       };
-    }(wp));
+    }(wp, i));
     
     m.addTo(wpGroup);
   }
