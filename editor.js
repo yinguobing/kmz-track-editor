@@ -262,8 +262,7 @@ function renderWaypoints() {
     m.on('click', function(w, idx) {
       return function() {
         var html = '<div class="wp-popup">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:0;font-size:14px;color:var(--ink);font-weight:600">' + escHtml(wpName) + '</h3>' +
-          '<span style="font-size:11px;color:var(--muted);cursor:pointer" onclick="editWaypoint(' + idx + ')">编辑</span></div>';
+          '<h3 style="margin:0;font-size:14px;color:var(--ink);font-weight:600;text-align:center">' + escHtml(wpName) + '</h3>';
         if (w.desc) {
           var descHtml = w.desc
             .replace(/<img /g, '<img style="max-width:100%;max-height:260px;object-fit:contain" loading="lazy" ')
@@ -271,7 +270,9 @@ function renderWaypoints() {
           html += '<div class="desc" style="margin-top:6px">' + descHtml + '</div>';
         }
         html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;gap:6px">' +
-          '<span style="font-size:11px;color:var(--red);cursor:pointer" onclick="deleteWaypoint(' + idx + ')">删除标注点</span></div>' +
+          '<button onclick="editWaypoint(' + idx + ')" style="flex:1;background:var(--border);color:var(--ink);border:none;border-radius:999px;padding:4px 0;font-size:11px;cursor:pointer;font-weight:500">编辑名称</button>' +
+          '<button onclick="deleteWaypoint(' + idx + ')" style="flex:1;background:var(--coral);color:#fff;border:none;border-radius:999px;padding:4px 0;font-size:11px;cursor:pointer;font-weight:500">删除</button>' +
+          '</div>' +
           '</div>';
         this.unbindTooltip();
         this.bindPopup(html, {maxWidth: 380, minWidth: 280}).openPopup();
