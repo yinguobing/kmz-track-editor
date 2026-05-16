@@ -131,7 +131,7 @@ def main():
         files_dir = os.path.join(DIR, 'files')
         if os.path.isdir(files_dir):
             added = 0
-            with zipfile.ZipFile(out_kmz, 'a', zipfile.ZIP_DEFLATED) as zout:
+            with zipfile.ZipFile(out_tmp, 'a', zipfile.ZIP_DEFLATED) as zout:
                 existing = set(zout.namelist())
                 for fname in os.listdir(files_dir):
                     arc_path = 'files/' + fname
