@@ -6,6 +6,7 @@ function updateStats() {
 
 // ===== State =====
 var map, osmLayer, satLayer, labels, latlngs, trackLine, pointMarkers;
+var descOverlay = null;
 var removals = [], selStart = null, selEnd = null, selMarkers = [], removedLines = [];
 var rawData = [];
 var dragCounter = 0;
@@ -107,10 +108,11 @@ function renderFileInfo() {
   var dist = computeDistance(rawData);
   var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
   var wpCount = waypoints.length;
-  var desc = trackInfo.desc || '';
-  el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
+  el.innerHTML = '<div class="fi-header">' +
+    '<div class="name">' + escHtml(name) + '</div>' +
+    (trackInfo.desc ? '<span class="fi-info" onclick="showTrackDesc()">ℹ️</span>' : '') +
+    '</div>' +
     '<div class="sub">' + date + '</div>' +
-    (desc ? '<div class="fl-desc">' + escHtml(desc) + '</div>' : '') +
     '<div class="fl-section">' +
       '<div class="fl-header"><span class="fl-label">轨迹</span><span class="eye-btn" onclick="toggleTrack()">' + (trackVisible ? '👁' : '👁‍🗨') + '</span></div>' +
       '<div class="fl-row"><span class="fl-key">长度</span><span class="fl-val">' + distStr + '</span></div>' +
@@ -126,6 +128,23 @@ function escHtml(s) {
   var d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+// Show track description info popup
+function showTrackDesc() {
+  if (!trackInfo.desc) return;
+  // Remove previous overlay if exists
+  if (descOverlay) { document.body.removeChild(descOverlay); descOverlay = null; return; }
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:5000;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center';
+  ov.onclick = function() { document.body.removeChild(ov); descOverlay = null; };
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:420px;width:90%;color:var(--body);font-size:13px;line-height:1.8;box-shadow:0 8px 32px rgba(0,0,0,0.5)';
+  box.onclick = function(e) { e.stopPropagation(); };
+  box.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:14px;font-weight:600;color:var(--ink)">路线介绍</span><span style="cursor:pointer;color:var(--muted);font-size:16px" onclick="document.body.removeChild(this.closest(\'[style*=\\'z-index:5000\'\'))">✕</span></div><div style="color:var(--body)">' + escHtml(trackInfo.desc) + '</div>';
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  descOverlay = ov;
 }
 
 // ===== Waypoints =====
