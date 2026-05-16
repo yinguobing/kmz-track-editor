@@ -234,7 +234,7 @@ document.getElementById('mapSwitch').addEventListener('click', function(e) {
 
 if (points.length > 0) {
   latlngs = points.map(function(p) { return [p.lat, p.lng]; });
-  trackLine = L.polyline(latlngs, {color: '#22c55e', weight: 4, opacity: 0.8}).addTo(map);
+  trackLine = L.polyline(latlngs, {color: '#f97316', weight: 4, opacity: 0.8}).addTo(map);
 
   var step = Math.max(1, Math.floor(points.length / 30));
   for (var i = 0; i < points.length; i += step) {
