@@ -32,12 +32,9 @@
   --radius-pill: 9999px;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--canvas);color:var(--ink);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
-#app{display:flex;height:100vh;width:100vw;position:relative}
-#map{flex:1;min-width:0}
-#panel{width:300px;min-width:200px;max-width:500px;height:100vh;overflow-y:auto;background:transparent;display:flex;flex-direction:column;z-index:10;margin-left:-300px;position:relative}
-
-/* Sidebar - floating cards over map */
-#panel{display:flex;flex-direction:column}
+#app{display:flex;height:100vh;width:100vw}
+#map{flex:1;min-width:0;position:relative}
+#panel{position:absolute;top:10px;right:10px;bottom:10px;width:300px;min-width:200px;max-width:500px;overflow-y:auto;background:transparent;display:flex;flex-direction:column;border-radius:var(--radius);z-index:100}
 #panel::-webkit-scrollbar{width:5px}
 #panel::-webkit-scrollbar-track{background:transparent}
 #panel::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
@@ -152,6 +149,28 @@ select:hover,select:focus{border-color:var(--coral)}
 <div id="overlay"><div class="spinner"></div><span id="overlayText">正在处理...</span></div>
 <div id="app" >
   <div id="map">
+    <div id="panel">
+      <div id="panel-body">
+        <div class="card card-file">
+          <div class="file-info" id="fileInfo"></div>
+        </div>
+        <div class="card card-delete">
+          <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span><span class="dot"></span> 已删除路径</span>
+            <span style="color:var(--coral);font-size:10px;font-weight:400" id="delListCount">0 段</span>
+          </div>
+          <div id="removalsList" class="del-list"></div>
+        </div>
+        <div class="card card-export" style="padding:12px 14px">
+          <div class="stats-row" id="statsRow" style="margin-bottom:8px">
+            <span>总 <b id="totalPts">0</b></span>
+            <span>已删 <b class="red" id="delPts">0</b></span>
+            <span>最终 <b class="green" id="finalPts">0</b></span>
+          </div>
+          <button class="btn btn-peach btn-full" id="btnDownload">导出</button>
+        </div>
+      </div>
+    </div>
     <div class="map-switch" id="mapSwitch">
       <button data-map="satellite" class="active">卫星地图</button>
       <button data-map="osm">标准地图</button>
@@ -164,37 +183,10 @@ select:hover,select:focus{border-color:var(--coral)}
       </div>
     </div>
   </div>
-  <div id="panel" id="panel">
-
-                <div id="panel-body">
-      <!-- 卡片 1: 文件信息 -->
-      <div class="card card-file">
-        <div class="file-info" id="fileInfo"></div>
-      </div>
-      
-      <!-- 卡片 2: 删除管理 -->
-      <div class="card card-delete">
-        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
-          <span><span class="dot"></span> 已删除路径</span>
-          <span style="color:var(--coral);font-size:10px;font-weight:400" id="delListCount">0 段</span>
-        </div>
-        <div id="removalsList" class="del-list"></div>
-      </div>
-      
-      <!-- 卡片 3: 导出 -->
-      <div class="card card-export" style="padding:12px 14px">
-        <div class="stats-row" id="statsRow" style="margin-bottom:8px">
-          <span>总 <b id="totalPts">0</b></span>
-          <span>已删 <b class="red" id="delPts">0</b></span>
-          <span>最终 <b class="green" id="finalPts">0</b></span>
-        </div>
-        <button class="btn btn-peach btn-full" id="btnDownload">导出</button>
-      </div></div>
-  </div>
 </div>
 
 
 
-<script src="/editor.js?v=3"></script>
+<script src="/editor.js?v=4"></script>
 </body>
 </html>
