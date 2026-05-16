@@ -517,7 +517,7 @@ function confirmDelete() {
   removals.push({start:s, end:e});
   localStorage.setItem('trackEditor_removals', JSON.stringify(removals));
   updateStats();
-  var rl = L.polyline(latlngs.slice(s, e + 1), {color: '#ef4444', weight: 6, opacity: 0.7}).addTo(map);
+  var rl = L.polyline(latlngs.slice(s, e + 1), {color: '#6b7280', weight: 5, opacity: 0.5}).addTo(map);
   removedLines.push(rl);
   rl._delInfo = {start: s, end: e};
   updateSelInfo(null, null);
