@@ -137,7 +137,7 @@ function renderWaypoints() {
         }
         html += '</div>';
         this.unbindTooltip();
-        this.bindPopup(html, {maxWidth: 360}).openPopup();
+        this.bindPopup(html, {maxWidth: 380, minWidth: 280}).openPopup();
       };
     }(wp));
     
