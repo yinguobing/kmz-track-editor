@@ -185,6 +185,10 @@ function toggleTrack() {
   } else {
     map.removeLayer(trackLine);
     if (pointMarkers) map.removeLayer(pointMarkers);
+    // Hide hover dot and reset cursor
+    if (typeof hoverDot !== 'undefined') hoverDot.setLatLng([0, 0]);
+    if (typeof hoverIdx !== 'undefined') hoverIdx = -1;
+    map.getContainer().style.cursor = '';
   }
   renderFileInfo();
 }
@@ -464,8 +468,8 @@ function updateSel() {
 
 if (points.length > 0) {
   map.on('click', function(e) {
-    // Ignore clicks on panel or map-switch (event bubbling)
     if (isClickOnUI(e.originalEvent)) return;
+    if (!trackVisible) return;
     var i = nearestLL(e.latlng);
     if (i == null) return;
     if (selStart == null) {
