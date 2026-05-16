@@ -92,9 +92,13 @@ function renderFileInfo() {
   var dist = computeDistance(rawData);
   var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
-    '<div class="meta-row"><span class="label">记录时间</span> ' + date + '</div>' +
-    '<div class="meta-row"><span class="label">轨迹长度</span> ' + distStr + '</div>' +
-    '<div class="meta-row"><span class="label">轨迹点数</span> ' + points.length + '</div>';
+    '<div class="file-stats">' +
+      '<div class="stat"><div class="stat-label">记录时间</div><div class="stat-value">' + date + '</div></div>' +
+      '<div class="stat-divider"></div>' +
+      '<div class="stat"><div class="stat-label">轨迹长度</div><div class="stat-value">' + distStr + '</div></div>' +
+      '<div class="stat-divider"></div>' +
+      '<div class="stat"><div class="stat-label">轨迹点数</div><div class="stat-value">' + points.length.toLocaleString() + '</div></div>' +
+    '</div>';
 }
 
 function escHtml(s) {
