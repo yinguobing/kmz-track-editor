@@ -417,11 +417,18 @@ function updateSelInfo(s, e) {
 
 function refreshDelList() {
   var el = document.getElementById('removalsList');
-  document.getElementById('delListCount').textContent = removals.length + ' \u6bb5';
+  var footer = document.getElementById('delFooter');
+  var countEl = document.getElementById('delCount');
+  
   if (removals.length === 0) {
-    el.innerHTML = '<div class="empty">\u6682\u65e0\u5220\u9664\u8def\u5f84</div>';
+    el.innerHTML = '';
+    if (footer) footer.style.display = 'none';
     return;
   }
+  
+  if (footer) footer.style.display = 'flex';
+  if (countEl) countEl.textContent = '已删除 ' + removals.length + ' 段';
+  
   var h = '';
   for (var i = removals.length - 1; i >= 0; i--) {
     var r = removals[i];
