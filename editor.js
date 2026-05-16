@@ -360,14 +360,31 @@ if (points.length > 0) {
     updateSel();
   });
 
-  // Cursor feedback: show pointer when mouse is near the track
-  var cursorTick = 0;
+  // Hover feedback: enlarge nearest point
+  var hoverDot = L.circleMarker([0, 0], {
+    radius: 7, color: '#fff', fill: true,
+    fillColor: '#00f5d4', fillOpacity: 0.9, weight: 2
+  }).addTo(map);
+  hoverDot.bindTooltip('', {sticky: true});
+  var hoverIdx = -1, hoverTick = 0;
   map.on('mousemove', function(e) {
-    // Throttle: check every 3rd move (~20 checks/sec)
-    cursorTick++;
-    if (cursorTick % 3 !== 0) return;
-    var isNear = nearestLL(e.latlng) !== null;
-    map.getContainer().style.cursor = isNear ? 'pointer' : '';
+    hoverTick++;
+    if (hoverTick % 2 !== 0) return;
+    if (isClickOnUI(e.originalEvent)) {
+      if (hoverIdx !== -1) { hoverDot.setLatLng([0, 0]); hoverIdx = -1; map.getContainer().style.cursor = ''; }
+      return;
+    }
+    var idx = nearestLL(e.latlng);
+    if (idx !== null && idx !== hoverIdx) {
+      hoverIdx = idx;
+      hoverDot.setLatLng([points[idx].lat, points[idx].lng]);
+      hoverDot.setTooltipContent('#' + idx);
+      map.getContainer().style.cursor = 'pointer';
+    } else if (idx === null && hoverIdx !== -1) {
+      hoverDot.setLatLng([0, 0]);
+      hoverIdx = -1;
+      map.getContainer().style.cursor = '';
+    }
   });
 }
 
