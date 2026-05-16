@@ -400,7 +400,7 @@ L.Control.ResetView = L.Control.extend({
     var btn = L.DomUtil.create('button', 'leaflet-control-reset');
     btn.innerHTML = '⟲';
     btn.title = '重置地图视图';
-    btn.style.cssText = 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface);color:var(--ink);border:2px solid var(--border-strong);border-radius:4px;cursor:pointer;font-size:16px;line-height:1;padding:0;margin-top:4px';
+    btn.style.cssText = 'width:30px;height:30px;background:var(--surface);color:var(--ink);border:2px solid var(--border);cursor:pointer;font-size:18px;font-weight:bold;line-height:30px;text-align:center;padding:0;margin-top:4px;border-radius:2px';
     L.DomEvent.on(btn, 'click', function(e) {
       L.DomEvent.stopPropagation(e);
       if (trackLine) fitBoundsWithPanel(trackLine.getBounds());
