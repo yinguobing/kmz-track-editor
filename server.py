@@ -275,6 +275,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', MIME.get(ext, 'application/octet-stream'))
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         self.end_headers()
         with open(fpath, 'rb') as f:
             self.wfile.write(f.read())
