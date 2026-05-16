@@ -131,10 +131,10 @@ function renderWaypoints() {
         var html = '<div class="wp-popup">' +
           '<h3>' + escHtml(w.name) + '</h3>';
         if (w.desc) {
-          // Clean desc HTML: constrain images, replace missing embeds
+          // Clean desc HTML: constrain images, render embeds as video
           var descHtml = w.desc
-            .replace(/<img /g, '<img style="max-width:100%;max-height:260px;object-fit:contain" ')
-            .replace(/<embed[^>]*>/gi, '<div style="color:var(--amber);font-size:11px;margin:4px 0">▶ 视频素材</div>');
+            .replace(/<img /g, '<img style="max-width:100%;max-height:260px;object-fit:contain" loading="lazy" ')
+            .replace(/<embed[^>]+src="([^"]+)"[^>]*>/gi, '<video controls style="max-width:100%;max-height:260px;border-radius:6px;margin:4px 0" preload="metadata"><source src="/$1"></video>');
           html += '<div class="desc">' + descHtml + '</div>';
         }
         html += '</div>';
