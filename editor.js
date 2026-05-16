@@ -394,6 +394,10 @@ document.getElementById('btnDownload').onclick = function() {
 
 document.getElementById('btnClear').onclick = clearAllDeletions;
 
+document.getElementById('btnResetView').onclick = function() {
+  if (trackLine) fitBoundsWithPanel(trackLine.getBounds());
+};
+
 if (points.length > 0) {
   fitBoundsWithPanel(trackLine.getBounds());
   setDropZonePersistent(false);
