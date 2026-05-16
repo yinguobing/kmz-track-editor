@@ -589,7 +589,7 @@ document.getElementById('btnDownload').onclick = function() {
     document.getElementById('overlayText').textContent = '处理完成，正在导出...';
     setTimeout(function() {
       overlay.style.display = 'none';
-      window.location.href = data.downloadUrl || '/download/edited_track.kmz';
+      window.location.href = (data.downloadUrl || '/download/edited_track.kmz') + '?t=' + Date.now();
     }, 2000);
   }).catch(function(e) {
     overlay.style.display = 'none';
