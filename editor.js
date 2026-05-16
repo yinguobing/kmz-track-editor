@@ -223,12 +223,12 @@ document.getElementById('mapSwitch').addEventListener('click', function(e) {
     map.removeLayer(osmLayer);
     satLayer.addTo(map);
     labels.addTo(map);
-    
+    if (trackLine) trackLine.setStyle({color: '#00f5d4'});
   } else {
     map.removeLayer(satLayer);
     map.removeLayer(labels);
-
     osmLayer.addTo(map);
+    if (trackLine) trackLine.setStyle({color: '#2563eb'});
   }
 });
 
