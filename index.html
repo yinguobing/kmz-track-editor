@@ -74,8 +74,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 
 .btn-coral{background:var(--coral);color:#fff;font-weight:600}
 .btn-coral:hover{background:#922700;box-shadow:0 0 12px rgba(170,45,0,0.25)}
-.btn-sm-coral{background:var(--coral);color:#fff;font-weight:500;border:none;border-radius:9999px;padding:4px 12px;font-size:11px;cursor:pointer;transition:all 0.15s}
-.btn-sm-coral:hover{background:#922700}
+.btn-muted{background:transparent;color:var(--muted);font-weight:400;border:1px solid var(--border);border-radius:9999px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all 0.15s}
+.btn-muted:hover{color:var(--coral);border-color:var(--coral)}
 
 /* Delete card footer */
 .del-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 0;flex-shrink:0}
@@ -146,7 +146,7 @@ select:hover,select:focus{border-color:var(--coral)}
           <div id="removalsList" class="del-list"></div>
           <div class="del-footer" id="delFooter">
             <span class="del-count" id="delCount">已删除 0 段</span>
-            <button class="btn btn-sm-coral" id="btnClear">清空</button>
+            <button class="btn-muted" id="btnClear">清空</button>
           </div>
         </div>
     </div>
