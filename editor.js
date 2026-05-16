@@ -10,6 +10,7 @@ var removals = [], selStart = null, selEnd = null, selMarkers = [], removedLines
 var rawData = [];
 var dragCounter = 0;
 var fileMeta = {};
+var trackInfo = {};
 var points = [];
 var waypoints = [];
 var wpGroup;
@@ -33,6 +34,11 @@ document.getElementById('panel').addEventListener('wheel', function(e) {
 }, {passive: true});
 
 // ===== Data Loading =====
+fetch('/track_info.json').then(function(r){return r.json();}).then(function(d){
+  trackInfo = d;
+  renderFileInfo();
+}).catch(function(){});
+
 fetch('/upload_meta.json').then(function(r){return r.json();}).then(function(d){
   fileMeta = d;
   renderFileInfo();
@@ -101,8 +107,10 @@ function renderFileInfo() {
   var dist = computeDistance(rawData);
   var distStr = dist >= 1000 ? (dist / 1000).toFixed(1) + ' km' : dist.toFixed(0) + ' m';
   var wpCount = waypoints.length;
+  var desc = trackInfo.desc || '';
   el.innerHTML = '<div class="name">' + escHtml(name) + '</div>' +
     '<div class="sub">' + date + '</div>' +
+    (desc ? '<div class="fl-desc">' + escHtml(desc) + '</div>' : '') +
     '<div class="fl-section">' +
       '<div class="fl-header"><span class="fl-label">轨迹</span><span class="eye-btn" onclick="toggleTrack()">' + (trackVisible ? '👁' : '👁‍🗨') + '</span></div>' +
       '<div class="fl-row"><span class="fl-key">长度</span><span class="fl-val">' + distStr + '</span></div>' +

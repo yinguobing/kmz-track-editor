@@ -78,6 +78,21 @@ def rebuild_from_kmz(kmz_path, orig_filename=None):
     with open(meta_path, 'w') as f:
         json.dump({'name': save_name}, f)
     
+    # === Extract track info (description, metadata) ===
+    info_path = os.path.join(DIR, 'track_info.json')
+    desc_match = re.search(r'<description>(.*?)</description>', kml, re.DOTALL)
+    # The first <description> outside Placemarks is the track description
+    # Find Document-level description (skip Placemark descriptions)
+    doc_desc = ''
+    if desc_match:
+        # Use the first description which should be the Document-level one
+        doc_desc = desc_match.group(1).strip()
+        # Decode HTML entities and strip CDATA
+        doc_desc = doc_desc.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"')
+        doc_desc = doc_desc.replace('<![CDATA[', '').replace(']]>', '')
+    with open(info_path, 'w', encoding='utf-8') as f:
+        json.dump({'desc': doc_desc}, f, ensure_ascii=False)
+    
     # === Extract waypoints and media ===
     _extract_waypoints_and_media(kmz_path, kml)
     
