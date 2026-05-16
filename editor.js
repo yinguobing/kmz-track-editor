@@ -259,7 +259,7 @@ if (P.length > 0) {
   pl.on('click', function(e) {
     if (e.originalEvent) {
       var t = e.originalEvent.target;
-      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapSwitch').contains(t))) return;
+      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapTools').contains(t))) return;
     }
     if (ss !== null && se !== null) {
       updateSelInfo(ss, se);
@@ -323,7 +323,7 @@ if (P.length > 0) {
     // Ignore clicks on panel or map-switch (event bubbling)
     if (e.originalEvent) {
       var t = e.originalEvent.target;
-      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapSwitch').contains(t))) return;
+      if (t && (document.getElementById('panel').contains(t) || document.getElementById('mapTools').contains(t))) return;
     }
     var i = nearestLL(e.latlng);
     if (i == null) return;

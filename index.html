@@ -49,7 +49,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 .card{background:var(--surface-soft);border-radius:var(--radius);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.35)}
 .card-file{flex-shrink:0}
 .card-delete{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-.card-export{flex-shrink:0}
+.
 
 .card-delete .section-title{padding:12px 14px 0}
 
@@ -71,7 +71,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 .file-info .placeholder .icon{font-size:28px;display:block;margin-bottom:8px}
 
 /* Map switch */
-.map-switch{position:fixed;bottom:24px;left:24px;z-index:2000;display:flex;gap:0;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.35)}
+.map-tools{position:fixed;bottom:24px;left:24px;z-index:2000;display:flex;gap:8px;align-items:center}
+.map-switch{display:flex;gap:0;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.35)}
 .map-switch button{padding:6px 14px;border:none;background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;transition:all 0.15s;outline:none;border-right:1px solid var(--border)}
 .map-switch button:last-child{border-right:none}
 .map-switch button.active{background:var(--coral);color:#fff}
@@ -79,6 +80,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 
 .btn-peach{background:var(--peach);color:var(--canvas);font-weight:600}
 .btn-peach:hover{background:#f09a65}
+.btn-coral{background:var(--coral);color:#fff;font-weight:600}
+.btn-coral:hover{background:#922700;box-shadow:0 0 12px rgba(170,45,0,0.25)}
 
 /* Deletion list */
 .del-list{font-size:11px;overflow-y:auto;flex:1;min-height:0}
@@ -161,19 +164,15 @@ select:hover,select:focus{border-color:var(--coral)}
           </div>
           <div id="removalsList" class="del-list"></div>
         </div>
-        <div class="card card-export" style="padding:12px 14px">
-          <div class="stats-row" id="statsRow" style="margin-bottom:8px">
-            <span>总 <b id="totalPts">0</b></span>
-            <span>已删 <b class="red" id="delPts">0</b></span>
-            <span>最终 <b class="green" id="finalPts">0</b></span>
-          </div>
-          <button class="btn btn-peach btn-full" id="btnDownload">导出</button>
-        </div>
+
       </div>
     </div>
-    <div class="map-switch" id="mapSwitch">
-      <button data-map="satellite" class="active">卫星地图</button>
-      <button data-map="osm">标准地图</button>
+    <div class="map-tools" id="mapTools">
+      <div class="map-switch" id="mapSwitch">
+        <button data-map="satellite" class="active">卫星地图</button>
+        <button data-map="osm">标准地图</button>
+      </div>
+      <button class="btn btn-coral" id="btnDownload" style="border-radius:8px;padding:8px 18px;font-size:12px">导出</button>
     </div>
     <div id="dropZone">
       <div class="hint">
