@@ -131,8 +131,10 @@ function renderWaypoints() {
         var html = '<div class="wp-popup">' +
           '<h3>' + escHtml(w.name) + '</h3>';
         if (w.desc) {
-          // Constrain images in desc HTML
-          var descHtml = w.desc.replace(/<img /g, '<img style="max-width:100%;max-height:260px;object-fit:contain" ');
+          // Clean desc HTML: constrain images, replace missing embeds
+          var descHtml = w.desc
+            .replace(/<img /g, '<img style="max-width:100%;max-height:260px;object-fit:contain" ')
+            .replace(/<embed[^>]*>/gi, '<div style="color:var(--amber);font-size:11px;margin:4px 0">▶ 视频素材</div>');
           html += '<div class="desc">' + descHtml + '</div>';
         }
         html += '</div>';
