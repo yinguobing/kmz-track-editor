@@ -358,9 +358,11 @@ function initEditor(){
     map.on('click',function(e){
       if(isClickOnUI(e.originalEvent))return;
       if(!trackVisible)return;
+      // Both ends selected → re-show popup on any map click
+      if(selStart!==null&&selEnd!==null){updateSelInfo(selStart,selEnd);return}
       var i=nearestLL(e.latlng);if(i==null)return;
       if(selStart==null){selStart=i;showInfo(i)}
-      else if(selEnd==null&&selStart!=null){
+      else if(selEnd==null){
         if(i===selStart){selStart=null;clearSel()}
         else{selEnd=i;updateSelInfo(selStart,selEnd)}
       }
