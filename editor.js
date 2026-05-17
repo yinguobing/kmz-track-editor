@@ -350,7 +350,7 @@ function initEditor(){
   if(s)try{removals=JSON.parse(s)}catch(e){}
 
   // Map with Canvas renderer (much faster for many vectors)
-  map=L.map('map',{zoomControl:false,maxZoom:20,attributionControl:false,preferCanvas:true});
+  map=L.map('map',{zoomControl:false,maxZoom:20,attributionControl:false});
   L.control.zoom({position:'topleft',zoomInTitle:'放大地图',zoomOutTitle:'缩小地图'}).addTo(map);
 
   osmLayer=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OSM',maxZoom:20});
