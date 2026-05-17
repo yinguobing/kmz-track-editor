@@ -110,7 +110,8 @@ function setDropZonePersistent(s){
 function renderFileInfo(){
   var el=document.getElementById('fileInfo');
   if(!el)return;
-  if(points.length===0){el.innerHTML='<div class="placeholder"><span class="icon">📂</span>暂无轨迹<br>拖放 KMZ 文件到地图</div>';return}
+  if(points.length===0){el.innerHTML='<div class="placeholder"><span class="icon">📂</span>暂无轨迹<br>拖放 KMZ 文件到地图</div>';document.getElementById('btnDownload').disabled=true;return}
+  document.getElementById('btnDownload').disabled=false;
   var name=fileMeta.displayName||fileMeta.name||'轨迹';
   if(name.endsWith('.kmz'))name=name.slice(0,-4);
   var date=formatDate(points[0].time);
@@ -347,6 +348,9 @@ function initEditor(){
     trackLine=L.polyline(latlngs,{color:'#00f5d4',weight:5,opacity:0.8}).addTo(map);
     wpGroup=L.layerGroup().addTo(map);
   } else latlngs=[];
+
+  // Enable/disable export button based on data availability
+  document.getElementById('btnDownload').disabled = points.length === 0;
 
   // Interaction
   if(points.length>0){
