@@ -1,29 +1,62 @@
 #!/usr/bin/env python3
-import os, sys, json, traceback, subprocess, time
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, unquote
+"""Track Editor — Flask backend"""
+import os, sys, json, traceback, glob, re, shutil, tempfile, zipfile
+from urllib.parse import unquote
+from flask import Flask, request, jsonify, send_file, send_from_directory, abort
 
+import process_edits_v2 as edit_mod
+
+app = Flask(__name__)
 PORT = 8899
 DIR = os.path.dirname(os.path.abspath(__file__))
+ORIG_KMZ = os.path.join(DIR, 'original.kmz')
 
 MIME = {
     '.html': 'text/html; charset=utf-8',
     '.js': 'application/javascript; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
     '.json': 'application/json',
-    '.js': 'application/javascript; charset=utf-8',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.mp4': 'video/mp4',
 }
 
 
-import shutil, tempfile, re
-ORIG_KMZ = os.path.join(DIR, 'original.kmz')
+# ── Startup cleanup ──────────────────────────────────────────
 
-def rebuild_from_kmz(kmz_path, orig_filename=None):
-    """Extract track + waypoints + media from KMZ."""
-    import zipfile
+def clean_temp_files():
+    for pattern in ['*.tmp', 'temp_out*', 'edited_track*', 'pending_edits.json', 'edit_errors.log']:
+        for f in glob.glob(os.path.join(DIR, pattern)):
+            try:
+                os.remove(f)
+            except:
+                pass
+    files_dir = os.path.join(DIR, 'files')
+    if os.path.isdir(files_dir):
+        wp_path = os.path.join(DIR, 'waypoints.json')
+        keep = set()
+        if os.path.exists(wp_path):
+            try:
+                with open(wp_path, encoding='utf-8') as f:
+                    for wp in json.load(f):
+                        for m in wp.get('media', []):
+                            keep.add(os.path.basename(m))
+                            keep.add(m.replace('files/', ''))
+            except:
+                pass
+        for fname in os.listdir(files_dir):
+            if fname not in keep:
+                try:
+                    os.remove(os.path.join(files_dir, fname))
+                except:
+                    pass
+
+clean_temp_files()
+
+
+# ── KMZ import ───────────────────────────────────────────────
+
+def rebuild_from_kmz(kmz_path):
     try:
         with zipfile.ZipFile(kmz_path, 'r') as z:
             if 'doc.kml' not in z.namelist():
@@ -31,16 +64,14 @@ def rebuild_from_kmz(kmz_path, orig_filename=None):
             kml = z.read('doc.kml').decode('utf-8', errors='replace')
     except:
         return None
-    
-    # Find track name
+
     name_match = re.search(r'<name>(.*?)</name>', kml)
     track_name = name_match.group(1).strip() if name_match else '未命名轨迹'
-    
-    # === Extract gx:Track points ===
+
     tracks = re.findall(r'<gx:Track>.*?</gx:Track>', kml, re.DOTALL)
     if not tracks:
         return None
-    
+
     points = []
     idx = 0
     for track in tracks:
@@ -54,89 +85,68 @@ def rebuild_from_kmz(kmz_path, orig_filename=None):
                 alt = float(parts[2]) if len(parts) > 2 else 0.0
                 points.append([idx, float(lat), float(lng), alt, whens[i]])
                 idx += 1
-    
+
     if not points:
         return None
-    
-    # Save track data
+
     json_path = os.path.join(DIR, 'track_data.json')
     with open(json_path, 'w') as f:
         json.dump(points, f)
-    
-    # Also copy the uploaded KMZ as new original
+
     shutil.copy2(kmz_path, ORIG_KMZ)
-    
-    # Clear old edited files
+
     for fname in ['edited_track.kmz', 'edited_track_v2.kmz', 'pending_edits.json']:
         fpath = os.path.join(DIR, fname)
         if os.path.exists(fpath):
             os.remove(fpath)
-    
-    # Save original filename (always use ASCII name to avoid URL encoding issues)
-    meta_path = os.path.join(DIR, 'upload_meta.json')
-    save_data = {'name': 'track.kmz'}
+
+    meta = {'name': 'track.kmz'}
     if track_name:
-        save_data['displayName'] = track_name
-    with open(meta_path, 'w') as f:
-        json.dump(save_data, f, ensure_ascii=False)
-    
-    # === Extract track info (description, metadata) ===
-    info_path = os.path.join(DIR, 'track_info.json')
+        meta['displayName'] = track_name
+    with open(os.path.join(DIR, 'upload_meta.json'), 'w', encoding='utf-8') as f:
+        json.dump(meta, f, ensure_ascii=False)
+
     desc_match = re.search(r'<description>(.*?)</description>', kml, re.DOTALL)
-    # The first <description> outside Placemarks is the track description
-    # Find Document-level description (skip Placemark descriptions)
     doc_desc = ''
     if desc_match:
-        # Use the first description which should be the Document-level one
         doc_desc = desc_match.group(1).strip()
-        # Decode HTML entities and strip CDATA
-        doc_desc = doc_desc.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"')
+        for e, r in [('&lt;', '<'), ('&gt;', '>'), ('&amp;', '&'), ('&quot;', '"')]:
+            doc_desc = doc_desc.replace(e, r)
         doc_desc = doc_desc.replace('<![CDATA[', '').replace(']]>', '')
-    with open(info_path, 'w', encoding='utf-8') as f:
+    with open(os.path.join(DIR, 'track_info.json'), 'w', encoding='utf-8') as f:
         json.dump({'desc': doc_desc}, f, ensure_ascii=False)
-    
-    # === Extract waypoints and media ===
+
     _extract_waypoints_and_media(kmz_path, kml)
-    
     return '已加载 "' + track_name + '"（' + str(len(points)) + ' 个轨迹点）'
 
 
 def _extract_waypoints_and_media(kmz_path, kml):
-    """Extract Placemark waypoints and associated media files from KMZ."""
-    import zipfile
     waypoints = []
     media_refs = set()
-    
-    placemarks = re.findall(r'<Placemark[^>]*>.*?</Placemark>', kml, re.DOTALL)
-    
-    for pm in placemarks:
-        # Skip gx:Track placemarks (waypoints have <Point> element)
-        if '<gx:Track>' in pm:
+
+    for pm in re.findall(r'<Placemark[^>]*>.*?</Placemark>', kml, re.DOTALL):
+        if '<gx:Track>' in pm or '<Point>' not in pm:
             continue
-        if '<Point>' not in pm:
-            continue
-        
+
         name_m = re.search(r'<name>(.*?)</name>', pm, re.DOTALL)
         desc_m = re.search(r'<description>(.*?)</description>', pm, re.DOTALL)
         coord_m = re.search(r'<coordinates>(.*?)</coordinates>', pm, re.DOTALL)
-        
+
         name = name_m.group(1).strip() if name_m else '未命名'
         desc = ''
         if desc_m:
             desc = desc_m.group(1).strip()
-            # Decode HTML entities and strip CDATA
-            desc = desc.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"')
+            for e, r in [('&lt;', '<'), ('&gt;', '>'), ('&amp;', '&'), ('&quot;', '"')]:
+                desc = desc.replace(e, r)
             desc = desc.replace('<![CDATA[', '').replace(']]>', '')
-        
-        lat, lng, alt = 0, 0, 0
+
+        lat = lng = alt = 0
         if coord_m:
             parts = coord_m.group(1).strip().split(',')
             if len(parts) >= 2:
-                lng = float(parts[0])
-                lat = float(parts[1])
+                lng, lat = float(parts[0]), float(parts[1])
                 alt = float(parts[2]) if len(parts) > 2 else 0
-        
-        # Collect media references
+
         wp_media = []
         for m in re.finditer(r'<img[^>]+src="([^"]+)"', desc):
             wp_media.append(m.group(1))
@@ -144,28 +154,16 @@ def _extract_waypoints_and_media(kmz_path, kml):
         for m in re.finditer(r'<embed[^>]+src="([^"]+)"', desc):
             wp_media.append(m.group(1))
             media_refs.add(m.group(1))
-        
-        waypoints.append({
-            'name': name,
-            'lat': lat,
-            'lng': lng,
-            'alt': alt,
-            'desc': desc,
-            'media': wp_media
-        })
-    
-    # Save waypoints.json
-    wp_path = os.path.join(DIR, 'waypoints.json')
-    with open(wp_path, 'w', encoding='utf-8') as f:
+
+        waypoints.append({'name': name, 'lat': lat, 'lng': lng, 'alt': alt, 'desc': desc, 'media': wp_media})
+
+    with open(os.path.join(DIR, 'waypoints.json'), 'w', encoding='utf-8') as f:
         json.dump(waypoints, f, ensure_ascii=False, indent=2)
-    
-    # Extract media files from KMZ
+
     files_dir = os.path.join(DIR, 'files')
     os.makedirs(files_dir, exist_ok=True)
-    
     with zipfile.ZipFile(kmz_path, 'r') as z:
         for ref in media_refs:
-            # ref is like 'files/gerImage_xxx.jpg'
             target = os.path.join(DIR, ref)
             try:
                 data = z.read(ref)
@@ -173,276 +171,159 @@ def _extract_waypoints_and_media(kmz_path, kml):
                 with open(target, 'wb') as f:
                     f.write(data)
             except KeyError:
-                pass  # media file not in archive
+                pass
 
-def get_orig_filename():
-    '''Get the original uploaded KMZ filename from saved metadata.'''
-    meta_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'upload_meta.json')
+
+# ── Helpers ──────────────────────────────────────────────────
+
+def send_json(data, status=200):
+    resp = jsonify(data)
+    resp.status_code = status
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return resp
+
+
+def safe_path(filename):
+    """Resolve a filename under DIR, rejecting path traversal."""
+    fpath = os.path.normpath(os.path.join(DIR, filename))
+    if not fpath.startswith(DIR) or not os.path.isfile(fpath):
+        abort(404)
+    return fpath
+
+
+# ── Routes ───────────────────────────────────────────────────
+
+@app.after_request
+def add_cors(resp):
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
+
+@app.route('/')
+def index():
+    return send_from_directory(DIR, 'index.html')
+
+
+@app.route('/<path:filename>')
+def static_serve(filename):
+    """Serve static files (JS, CSS, JSON, etc.) — excludes /download subtree."""
+    fpath = safe_path(filename)
+    ext = os.path.splitext(filename)[1].lower()
+    mimetype = MIME.get(ext)
+    resp = send_file(fpath, mimetype=mimetype)
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return resp
+
+
+@app.route('/download/<filename>')
+def download(filename):
+    """Stream a KMZ file for download with attachment disposition."""
+    fname = unquote(os.path.basename(filename))
+    fpath = os.path.join(DIR, fname)
+    if not os.path.isfile(fpath):
+        abort(404)
+    return send_file(fpath, mimetype='application/vnd.google-earth.kmz',
+                     as_attachment=True, download_name=fname)
+
+
+@app.route('/upload', methods=['POST'])
+def upload_kmz():
+    if 'file' not in request.files:
+        return send_json({'success': False, 'error': '请选择 KMZ 文件'}, 400)
+    f = request.files['file']
+    if not f.filename or not f.filename.lower().endswith('.kmz'):
+        return send_json({'success': False, 'error': '请上传 .kmz 文件'}, 400)
+
+    raw = f.read()
+    if not raw[:2] == b'PK':
+        return send_json({'success': False, 'error': '文件格式错误，请上传有效的 KMZ 文件'}, 400)
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.kmz', dir=DIR)
+    tmp.write(raw)
+    tmp.close()
+
+    try:
+        msg = rebuild_from_kmz(tmp.name)
+        if msg:
+            return send_json({'success': True, 'message': msg})
+        return send_json({'success': False, 'error': '处理 KMZ 失败，请检查是否为两步路导出的轨迹文件'}, 500)
+    except Exception as e:
+        return send_json({'success': False, 'error': str(e), 'traceback': traceback.format_exc()}, 500)
+    finally:
+        os.unlink(tmp.name)
+
+
+@app.route('/upload-file', methods=['POST'])
+def upload_file():
+    saved = []
+    for f in request.files.getlist('file') or [request.files.get('file')]:
+        if not f or not f.filename:
+            continue
+        safe = os.path.basename(f.filename)
+        if not safe:
+            continue
+        target = os.path.join(DIR, 'files', safe)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        f.save(target)
+        saved.append(safe)
+
+    if saved:
+        return send_json({'success': True, 'message': f'已保存 {len(saved)} 个文件'})
+    return send_json({'success': False, 'error': '未找到文件内容'}, 400)
+
+
+@app.route('/api/rename', methods=['POST'])
+def rename():
+    data = request.get_json(silent=True) or {}
+    new_name = data.get('name', '').strip()
+    if not new_name:
+        return send_json({'success': False, 'error': '名称不能为空'}, 400)
+    meta_path = os.path.join(DIR, 'upload_meta.json')
     if os.path.exists(meta_path):
-        try:
-            with open(meta_path) as f:
-                meta = json.load(f)
-            return meta.get('name', 'edited_track.kmz')
-        except:
-            pass
-    return 'edited_track.kmz'
+        with open(meta_path, 'r', encoding='utf-8') as f:
+            meta = json.load(f)
+    else:
+        meta = {'name': 'track.kmz'}
+    meta['displayName'] = new_name
+    with open(meta_path, 'w', encoding='utf-8') as f:
+        json.dump(meta, f, ensure_ascii=False)
+    return send_json({'success': True, 'name': new_name})
 
-class Handler(BaseHTTPRequestHandler):
 
-    def log_message(self, fmt, *args):
-        sys.stderr.write(f"[S] {fmt % args}\n")
-    
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
-    
-    def do_POST_upload(self, path):
-        """Handle KMZ file upload via multipart POST to /upload"""
-        try:
-            import cgi
-            ctype, pdict = cgi.parse_header(self.headers.get('Content-Type', ''))
-            if ctype != 'multipart/form-data':
-                self._send_json(400, {'success': False, 'error': 'Expected multipart/form-data'})
-                return
+@app.route('/api/apply-edits', methods=['POST'])
+def apply_edits():
+    data = request.get_json(silent=True) or {}
+    try:
+        out_path = edit_mod.run_edits(
+            data.get('removals', []),
+            data.get('wpDeleted', []),
+            data.get('wpEdited', {})
+        )
+        out_name = os.path.basename(out_path)
+        return send_json({
+            'success': True,
+            'message': '编辑完成',
+            'downloadUrl': '/download/' + out_name,
+            'ready': True
+        })
+    except Exception as e:
+        return send_json({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, 500)
 
-            boundary = self.headers.get('Content-Type', '').split('boundary=')[-1].strip()
-            body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
-            
-            # Find the KMZ file part in the multipart body
-            boundary_bytes = f'--{boundary}'.encode()
-            parts = body.split(boundary_bytes)
-            
-            kmz_data = None
-            for part in parts:
-                if b'filename=' in part and (b'.kmz' in part or b'application' in part):
-                    # Find the double newline that separates headers from content
-                    idx = part.find(b'\r\n\r\n')
-                    if idx > 0:
-                        content_start = idx + 4
-                        # Remove trailing newlines and boundary end
-                        kmz_data = part[content_start:].rstrip(b'\r\n- \t')
-                        break
-            
-            if not kmz_data:
-                self._send_json(400, {'success': False, 'error': '请选择 KMZ 文件'})
-                return
-            
-            # Extract original filename from multipart headers
-            orig_name = 'uploaded.kmz'
-            for part in parts:
-                if b'filename=' in part:
-                    fn_match = re.search(b'filename="([^"]*)"', part)
-                    if fn_match:
-                        orig_name = fn_match.group(1).decode('utf-8', errors='replace')
-                        break
-            
-            # Save to temp file
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.kmz', dir=DIR)
-            tmp.write(kmz_data)
-            tmp.close()
-            tmp_path = tmp.name
-            
-            proc_result = rebuild_from_kmz(tmp_path, orig_name)
-            os.unlink(tmp_path)
-            
-            if proc_result:
-                self._send_json(200, {'success': True, 'message': proc_result})
-            else:
-                self._send_json(500, {'success': False, 'error': '处理 KMZ 失败，请检查是否为两步路导出的轨迹文件'})
-        except Exception as e:
-            self._send_json(500, {'success': False, 'error': str(e), 'traceback': traceback.format_exc()})
-    
-    def _send_json(self, code, data):
-        self.send_response(code)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode())
-    
-    def do_POST(self):
-        parsed = urlparse(self.path)
-        # Media file upload to files/
-        if parsed.path == '/upload-file':
-            self.do_POST_file()
-            return
-        # KMZ upload
-        if parsed.path == '/upload':
-            self.do_POST_upload(parsed.path)
-            return
 
-        try:
-            length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(length)
-            data = json.loads(body)
-            removals = data.get('removals', [])
-            total_pts = data.get('totalPts', 3373)
-            
-            # Save the removals to a temp file for the background process
-            wpDeleted = data.get('wpDeleted', [])
-            info = {
-                'removals': removals,
-                'totalPts': total_pts,
-                'timestamp': time.time(),
-                'origFilename': get_orig_filename(),
-                'wpDeleted': wpDeleted
-            }
-            with open(os.path.join(DIR, 'pending_edits.json'), 'w') as f:
-                json.dump(info, f)
-            
-            # Run the edit script in background (fully detached)
-            subprocess.Popen(
-                [sys.executable, os.path.join(DIR, 'process_edits_v2.py')],
-                cwd=DIR,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                stdin=subprocess.DEVNULL
-            )
-            
-            # Immediately respond that the edit is queued
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            self.end_headers()
-            self.wfile.write(json.dumps({
-                'success': True,
-                'message': '编辑已提交，请稍后点击下载按钮',
-                'downloadUrl': '/download/' + get_orig_filename().replace('.kmz', '_edited.kmz'),
-                'ready': False
-            }).encode())
-        except Exception as e:
-            self.send_response(500)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            self.end_headers()
-            self.wfile.write(json.dumps({
-                'success': False, 'error': str(e),
-                'traceback': traceback.format_exc()
-            }).encode())
-    
-    def do_POST_file(self):
-        """Handle generic file upload to files/ directory."""
-        import cgi
-        ctype, pdict = cgi.parse_header(self.headers.get('Content-Type', ''))
-        if ctype != 'multipart/form-data':
-            self._send_json(400, {'success': False, 'error': 'Expected multipart/form-data'})
-            return
-        
-        boundary = self.headers.get('Content-Type', '').split('boundary=')[-1].strip()
-        body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
-        boundary_bytes = f'--{boundary}'.encode()
-        parts = body.split(boundary_bytes)
-        
-        saved = []
-        for part in parts:
-            if b'Content-Disposition' not in part:
-                continue
-            # Extract filename
-            fname_match = re.search(rb'filename="([^"]*)"', part)
-            if not fname_match:
-                continue
-            fname = fname_match.group(1).decode('utf-8', errors='replace')
-            if not fname:
-                continue
-            # Extract file content
-            marker = b'\r\n\r\n'
-            idx = part.find(marker)
-            if idx == -1:
-                continue
-            content = part[idx + len(marker):]
-            # Strip trailing boundary markers
-            content = content.rstrip(b'\r\n- \t')
-            
-            target = os.path.join(DIR, 'files', fname)
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            with open(target, 'wb') as f:
-                f.write(content)
-            saved.append(fname)
-        
-        if saved:
-            self._send_json(200, {'success': True, 'message': f'已保存 {len(saved)} 个文件: {", ".join(saved)}'})
-        else:
-            self._send_json(400, {'success': False, 'error': '未找到文件内容'})
-    
+@app.route('/status')
+def status():
+    edited_exists = os.path.exists(os.path.join(DIR, 'edited_track.kmz'))
+    return send_json({'ready': edited_exists})
 
-    def do_GET(self):
-        path = urlparse(self.path).path
-        
-        if path.startswith('/download/'):
-            fname = unquote(os.path.basename(path))
-            fpath = os.path.join(DIR, fname)
-            if os.path.exists(fpath):
-                fsize = os.path.getsize(fpath)
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/vnd.google-earth.kmz')
-                self.send_header('Content-Disposition', f'attachment; filename="{fname}"')
-                self.send_header('Content-Length', str(fsize))
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.send_header('Accept-Ranges', 'bytes')
-                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-                self.end_headers()
-                import shutil
-                with open(fpath, 'rb') as f:
-                    shutil.copyfileobj(f, self.wfile, 262144)
-                return
-            self.send_error(404)
-            return
-        
-        if path == '/upload':
-            # Serve upload page
-            upload_path = os.path.join(DIR, 'upload_page.html')
-            if os.path.exists(upload_path):
-                with open(upload_path, 'rb') as f:
-                    html = f.read()
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/html; charset=utf-8')
-                self.end_headers()
-                self.wfile.write(html)
-            else:
-                self.send_error(404)
-            return
-        
-        if path == '/status':
-            edited_exists = os.path.exists(os.path.join(DIR, 'edited_track.kmz'))
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            self.end_headers()
-            self.wfile.write(json.dumps({
-                'ready': edited_exists
-            }).encode())
-            return
-        
-        if path == '/' or path == '':
-            path = '/index.html'
-        
-        fpath = os.path.join(DIR, path.lstrip('/'))
-        fpath = os.path.normpath(fpath)
-        
-        if not fpath.startswith(DIR) or not os.path.isfile(fpath):
-            self.send_error(404)
-            return
-        
-        ext = os.path.splitext(fpath)[1].lower()
-        self.send_response(200)
-        self.send_header('Content-Type', MIME.get(ext, 'application/octet-stream'))
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-        self.end_headers()
-        with open(fpath, 'rb') as f:
-            self.wfile.write(f.read())
 
+# ── Entrypoint ───────────────────────────────────────────────
 
 if __name__ == '__main__':
-    server = HTTPServer(('0.0.0.0', PORT), Handler)
     print(f'🚀 Track Editor: http://0.0.0.0:{PORT}')
     print(f'   Local: http://127.0.0.1:{PORT}')
     print(f'   Network: http://192.168.3.10:{PORT}')
-    server.serve_forever()
+    app.run(host='0.0.0.0', port=PORT, threaded=True, use_reloader=False)
