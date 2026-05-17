@@ -18,3 +18,11 @@ Thumbs.db
 files/
 original.kmz
 *_edited.kmz
+
+# Runtime data (regenerated from KMZ on each upload)
+track_data.json
+waypoints.json
+track_info.json
+upload_meta.json
+pending_edits.json
+edit_errors.log
