@@ -135,7 +135,7 @@ function setDropZonePersistent(s){
 function renderFileInfo(){
   var el=document.getElementById('fileInfo');
   if(!el)return;
-  if(points.length===0){el.innerHTML='<div class="placeholder"><span class="icon">📂</span>暂无轨迹<br>拖放 KMZ 文件到地图</div>';document.getElementById('btnDownload').disabled=true;return}
+  if(points.length===0){el.innerHTML='<div class="placeholder"><span class="icon">📂</span>暂无轨迹</div>';document.getElementById('btnDownload').disabled=true;return}
   document.getElementById('btnDownload').disabled=false;
   var name=fileMeta.displayName||fileMeta.name||'轨迹';
   if(name.endsWith('.kmz'))name=name.slice(0,-4);
