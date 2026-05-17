@@ -97,6 +97,31 @@ function formatDate(iso){
 }
 function escHtml(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
+// ── Toast / Prompt ─────────────────────────────────────────
+function showToast(msg,type){
+  var el=document.getElementById('toast');
+  if(!el)return;
+  el.textContent=msg;el.className='toast';
+  if(type)el.classList.add(type);
+  void el.offsetWidth;el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer=setTimeout(function(){el.classList.remove('show')},3000);
+}
+function showPrompt(title,defVal,cb){
+  var ov=document.createElement('div');ov.className='prompt-overlay';
+  ov.innerHTML='<div class="prompt-box" onclick="event.stopPropagation()">'+
+    '<div class="prompt-title">'+escHtml(title)+'</div>'+
+    '<input class="prompt-input" id="_pi" value="'+escHtml(defVal||'')+'">'+
+    '<div class="prompt-buttons"><button class="ok" id="_pok">确定</button><button class="cancel" id="_pca">取消</button></div></div>';
+  document.body.appendChild(ov);
+  var inp=document.getElementById('_pi');inp.focus();inp.select();
+  function clean(){document.body.removeChild(ov)}
+  document.getElementById('_pok').onclick=function(){clean();cb(inp.value.trim())};
+  document.getElementById('_pca').onclick=function(){clean();cb(null)};
+  ov.onclick=function(){clean();cb(null)};
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('_pok').click();if(e.key==='Escape')document.getElementById('_pca').click()});
+}
+
 function showDropZone(){var dz=document.getElementById('dropZone');if(dz)dz.classList.add('active')}
 function hideDropZone(){var dz=document.getElementById('dropZone');if(dz)dz.classList.remove('active')}
 function setDropZonePersistent(s){
@@ -157,7 +182,7 @@ function startRename(){
     var v=inp.value.trim();
     if(!v){inp.focus();return}
     fetch('/api/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:v})})
-    .then(function(r){return r.json()}).then(function(d){if(d.success)fileMeta.displayName=d.name;renderFileInfo()})
+    .then(function(r){return r.json()}).then(function(d){if(d.success)fileMeta.displayName=d.name;else showToast('修改失败: '+(d.error||'未知错误'),'error');renderFileInfo()})
     .catch(function(){renderFileInfo()});
   }
   function cancel(){renderFileInfo()}
@@ -214,9 +239,10 @@ function deleteWp(idx){
 function editWp(idx){
   if(idx<0||idx>=waypoints.length)return;
   var wp=waypoints[idx],ex=wpEdited[idx]||{};
-  var name=prompt('编辑标注点名称：',ex.name||wp.name);
-  if(name===null)return;
-  wpEdited[idx]={name:name};saveWpEdits();map&&map.closePopup();renderWaypoints();renderFileInfo();
+  showPrompt('编辑标注点名称：',ex.name||wp.name,function(name){
+    if(name===null||name==='')return;
+    wpEdited[idx]={name:name};saveWpEdits();map&&map.closePopup();renderWaypoints();renderFileInfo();
+  });
 }
 function renderWaypoints(){
   if(waypoints.length===0||!map)return;
@@ -410,7 +436,7 @@ function initEditor(){
       var files=e.dataTransfer&&e.dataTransfer.files;
       if(!files||files.length===0)return;
       var file=files[0];
-      if(!file.name||!file.name.toLowerCase().endsWith('.kmz')){alert('请拖放 .kmz 格式的文件');return}
+      if(!file.name||!file.name.toLowerCase().endsWith('.kmz')){showToast('请拖放 .kmz 格式的文件','error');return}
       var ov=document.getElementById('overlay');
       document.getElementById('overlayText').textContent='正在上传 '+file.name+' ...';
       ov.style.display='flex';
@@ -423,9 +449,9 @@ function initEditor(){
           setTimeout(function(){location.reload()},800);
         } else {
           ov.style.display='none';
-          alert('上传失败: '+(d.error||'未知错误'));
+          showToast('上传失败: '+(d.error||'未知错误'),'error');
         }
-      }).catch(function(e){ov.style.display='none';alert('上传失败: '+e.message)});
+      }).catch(function(e){ov.style.display='none';showToast('上传失败: '+e.message,'error')});
     });
   })();
 }
@@ -439,8 +465,8 @@ document.getElementById('btnDownload').onclick=function(){
   .then(function(r){return r.json()}).then(function(d){
     ov.style.display='none';btn.disabled=false;
     if(d.success){var a=document.createElement('a');a.href=(d.downloadUrl||'/download/track_edited.kmz')+'?t='+Date.now();a.download='';a.style.display='none';document.body.appendChild(a);a.click();document.body.removeChild(a)}
-    else alert('编辑失败: '+(d.error||'未知错误'));
-  }).catch(function(e){ov.style.display='none';btn.disabled=false;alert('导出失败: '+e.message)});
+    else showToast('编辑失败: '+(d.error||'未知错误'),'error');
+  }).catch(function(e){ov.style.display='none';btn.disabled=false;showToast('导出失败: '+e.message,'error')});
 };
 document.getElementById('btnClear').onclick=clearAllDeletions;
 
