@@ -391,6 +391,37 @@ function initEditor(){
   else{map.setView([35,110],4);setDropZonePersistent(true)}
 
   renderFileInfo();refreshDelList();renderWaypoints();
+
+  // ── Drag & Drop ────────────────────────────────────────────
+  (function setupDragDrop(){
+    var dz=document.getElementById('dropZone'),mapEl=document.getElementById('map');
+    if(!dz||!mapEl)return;
+    mapEl.addEventListener('dragenter',function(e){e.preventDefault();e.stopPropagation();dragCounter++;showDropZone()});
+    mapEl.addEventListener('dragover',function(e){e.preventDefault();e.stopPropagation()});
+    mapEl.addEventListener('dragleave',function(e){e.preventDefault();e.stopPropagation();dragCounter--;if(dragCounter<=0){dragCounter=0;hideDropZone()}});
+    mapEl.addEventListener('drop',function(e){
+      e.preventDefault();e.stopPropagation();dragCounter=0;hideDropZone();
+      var files=e.dataTransfer&&e.dataTransfer.files;
+      if(!files||files.length===0)return;
+      var file=files[0];
+      if(!file.name||!file.name.toLowerCase().endsWith('.kmz')){alert('请拖放 .kmz 格式的文件');return}
+      var ov=document.getElementById('overlay');
+      document.getElementById('overlayText').textContent='正在上传 '+file.name+' ...';
+      ov.style.display='flex';
+      var fd=new FormData();fd.append('file',file);
+      fetch('/upload',{method:'POST',body:fd}).then(function(r){return r.json()}).then(function(d){
+        if(d.success){
+          document.getElementById('overlayText').textContent='加载完成，正在刷新...';
+          localStorage.removeItem('trackEditor_removals');
+          localStorage.removeItem('trackEditor_wpEdits');
+          setTimeout(function(){location.reload()},800);
+        } else {
+          ov.style.display='none';
+          alert('上传失败: '+(d.error||'未知错误'));
+        }
+      }).catch(function(e){ov.style.display='none';alert('上传失败: '+e.message)});
+    });
+  })();
 }
 
 // ── Export / Download ──────────────────────────────────────
