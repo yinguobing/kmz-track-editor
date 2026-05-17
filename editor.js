@@ -256,7 +256,7 @@ function renderWaypoints(){
     m.on('click',(function(w,idx,wn){
       return function(){
         var h='<div class="wp-popup"><h3 style="margin:0;font-size:14px;color:var(--ink);font-weight:600;text-align:center">'+escHtml(wn)+'</h3>';
-        if(w.desc)h+='<div class="desc" style="margin-top:6px">'+w.desc.replace(/<img /gi,'<img style="max-width:100%;max-height:260px;object-fit:contain" loading="lazy" ').replace(/<embed[^>]+src="([^"]+)"[^>]*>/gi,'<video controls src="/$1" style="max-width:100%;max-height:260px;border-radius:6px;margin:4px 0" preload="metadata"></video>')+'</div>';
+        if(w.desc)h+='<div class="desc" style="margin-top:6px">'+w.desc.replace(/<img /gi,'<img style="max-width:100%;max-height:260px;object-fit:contain" loading="lazy" ').replace(/<embed[^>]+src="([^"]+)"[^>]*>/gi,'<video controls style="max-width:100%;max-height:260px;border-radius:6px;margin:4px 0" playsinline onerror="this.outerHTML=\'<div style=padding:8px;text-align:center;color:var(--muted);font-size:12px>⚠ 浏览器不支持此视频格式<br><a href=/$1 download style=color:var(--coral)>下载后播放</a></div>\'"><source src="/$1" type="video/mp4"></video>')+'</div>';
         h+='<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);display:flex;gap:6px">'+
           '<button data-action="edit-wp" data-idx="'+idx+'" style="flex:1;background:var(--border);color:var(--ink);border:none;border-radius:999px;padding:4px 0;font-size:11px;cursor:pointer;font-weight:500">编辑名称</button>'+
           '<button data-action="delete-wp" data-idx="'+idx+'" style="flex:1;background:var(--coral);color:#fff;border:none;border-radius:999px;padding:4px 0;font-size:11px;cursor:pointer;font-weight:500">删除</button>'+
