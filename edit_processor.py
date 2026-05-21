@@ -4,7 +4,7 @@ Process edits on the ORIGINAL multi-segment KML structure.
 Reads pending_edits.json, applies deletions to each segment,
 and produces a new doc.kml that preserves the 10-segment structure.
 """
-import os, sys, json, traceback, shutil, copy, zipfile
+import os, json, re, shutil, zipfile
 import xml.etree.ElementTree as ET
 
 DIR = os.path.dirname(os.path.abspath(__file__))
@@ -112,6 +112,129 @@ def fix_kml_namespaces(kml_str):
         if prefix not in kml_str:
             kml_str = kml_str.replace('<kml ', f'<kml {prefix}="{ns_url}" ')
     return kml_str
+
+
+def extract_track_data(kmz_path):
+    """Extract track points, waypoints, media and info from a KMZ file.
+    Writes track_data.json, waypoints.json, track_info.json, upload_meta.json.
+    Copies the original KMZ for later edit processing.
+    Returns a success message string, or None on failure.
+    """
+    try:
+        with zipfile.ZipFile(kmz_path, 'r') as z:
+            if 'doc.kml' not in z.namelist():
+                return None
+            kml = z.read('doc.kml').decode('utf-8', errors='replace')
+    except Exception:
+        return None
+
+    name_match = re.search(r'<name>(.*?)</name>', kml)
+    track_name = name_match.group(1).strip() if name_match else '未命名轨迹'
+
+    tracks = re.findall(r'<gx:Track>.*?</gx:Track>', kml, re.DOTALL)
+    if not tracks:
+        return None
+
+    points = []
+    idx = 0
+    for track in tracks:
+        whens = re.findall(r'<when>(.*?)</when>', track)
+        coords = re.findall(r'<gx:coord>(.*?)</gx:coord>', track)
+        min_len = min(len(whens), len(coords))
+        for i in range(min_len):
+            parts = coords[i].strip().split()
+            if len(parts) >= 2:
+                lng, lat = parts[0], parts[1]
+                alt = float(parts[2]) if len(parts) > 2 else 0.0
+                points.append([idx, float(lat), float(lng), alt, whens[i]])
+                idx += 1
+
+    if not points:
+        return None
+
+    json_path = os.path.join(DIR, 'track_data.json')
+    with open(json_path, 'w') as f:
+        json.dump(points, f)
+
+    shutil.copy2(kmz_path, ORIG_KMZ)
+
+    for fname in ['edited_track.kmz', 'edited_track_v2.kmz', 'pending_edits.json']:
+        fpath = os.path.join(DIR, fname)
+        if os.path.exists(fpath):
+            os.remove(fpath)
+
+    meta = {'name': 'track.kmz'}
+    if track_name:
+        meta['displayName'] = track_name
+    with open(os.path.join(DIR, 'upload_meta.json'), 'w', encoding='utf-8') as f:
+        json.dump(meta, f, ensure_ascii=False)
+
+    desc_match = re.search(r'<description>(.*?)</description>', kml, re.DOTALL)
+    doc_desc = ''
+    if desc_match:
+        doc_desc = desc_match.group(1).strip()
+        for e, r in [('&lt;', '<'), ('&gt;', '>'), ('&amp;', '&'), ('&quot;', '"')]:
+            doc_desc = doc_desc.replace(e, r)
+        doc_desc = doc_desc.replace('<![CDATA[', '').replace(']]>', '')
+    with open(os.path.join(DIR, 'track_info.json'), 'w', encoding='utf-8') as f:
+        json.dump({'desc': doc_desc}, f, ensure_ascii=False)
+
+    _extract_waypoints_and_media(kmz_path, kml)
+    return '已加载 "' + track_name + '"（' + str(len(points)) + ' 个轨迹点）'
+
+
+def _extract_waypoints_and_media(kmz_path, kml):
+    waypoints = []
+    media_refs = set()
+
+    for pm in re.findall(r'<Placemark[^>]*>.*?</Placemark>', kml, re.DOTALL):
+        if '<gx:Track>' in pm or '<Point>' not in pm:
+            continue
+
+        name_m = re.search(r'<name>(.*?)</name>', pm, re.DOTALL)
+        desc_m = re.search(r'<description>(.*?)</description>', pm, re.DOTALL)
+        coord_m = re.search(r'<coordinates>(.*?)</coordinates>', pm, re.DOTALL)
+
+        name = name_m.group(1).strip() if name_m else '未命名'
+        desc = ''
+        if desc_m:
+            desc = desc_m.group(1).strip()
+            for e, r in [('&lt;', '<'), ('&gt;', '>'), ('&amp;', '&'), ('&quot;', '"')]:
+                desc = desc.replace(e, r)
+            desc = desc.replace('<![CDATA[', '').replace(']]>', '')
+
+        lat = lng = alt = 0
+        if coord_m:
+            parts = coord_m.group(1).strip().split(',')
+            if len(parts) >= 2:
+                lng, lat = float(parts[0]), float(parts[1])
+                alt = float(parts[2]) if len(parts) > 2 else 0
+
+        wp_media = []
+        for m in re.finditer(r'<img[^>]+src="([^"]+)"', desc):
+            wp_media.append(m.group(1))
+            media_refs.add(m.group(1))
+        for m in re.finditer(r'<embed[^>]+src="([^"]+)"', desc):
+            wp_media.append(m.group(1))
+            media_refs.add(m.group(1))
+
+        waypoints.append({'name': name, 'lat': lat, 'lng': lng, 'alt': alt, 'desc': desc, 'media': wp_media})
+
+    with open(os.path.join(DIR, 'waypoints.json'), 'w', encoding='utf-8') as f:
+        json.dump(waypoints, f, ensure_ascii=False, indent=2)
+
+    files_dir = os.path.join(DIR, 'files')
+    os.makedirs(files_dir, exist_ok=True)
+    with zipfile.ZipFile(kmz_path, 'r') as z:
+        for ref in media_refs:
+            target = os.path.join(DIR, ref)
+            try:
+                data = z.read(ref)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with open(target, 'wb') as f:
+                    f.write(data)
+            except KeyError:
+                pass
 
 
 def apply_wp_changes(root, wpDeleted, wpEdited):
@@ -340,29 +463,3 @@ def run_edits(removals, wpDeleted, wpEdited=None):
     os.replace(out_tmp, out_kmz)
     print(f"Done! Output: {out_kmz}")
     return out_kmz
-
-
-def main():
-    """CLI entry: reads pending_edits.json."""
-    edits_path = os.path.join(DIR, 'pending_edits.json')
-    if not os.path.exists(edits_path):
-        print("No pending edits")
-        return
-    with open(edits_path) as f:
-        info = json.load(f)
-    removals = info.get('removals', [])
-    wpDeleted = info.get('wpDeleted', [])
-    wpEdited = info.get('wpEdited', {})
-    try:
-        run_edits(removals, wpDeleted, wpEdited)
-    except Exception as e:
-        print(f"Error: {e}")
-        traceback.print_exc()
-        sys.exit(1)
-    finally:
-        if os.path.exists(edits_path):
-            os.remove(edits_path)
-
-
-if __name__ == '__main__':
-    main()

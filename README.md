@@ -10,7 +10,7 @@ python3 server.py
 
 启动后访问 http://127.0.0.1:8899，将 .kmz 文件拖入地图即可开始编辑。
 
-依赖：Python 3 + Flask。无需安装其他依赖，Leaflet 已内置在 `lib/` 目录中。
+依赖：Python 3 + Flask。无需安装其他依赖，Leaflet 已内置在 `static/lib/` 目录中。
 
 ## 功能
 
@@ -34,14 +34,14 @@ python3 server.py
 
 ## 文件说明
 
-| 文件 | 说明 |
+| 路径 | 说明 |
 |---|---|
 | `server.py` | Flask 后端，处理上传、编辑、导出 |
-| `process_edits_v2.py` | KML 编辑处理逻辑 |
-| `index.html` | 前端页面（HTML + CSS） |
-| `editor.js` | 前端交互逻辑（Leaflet 地图 + 编辑操作） |
-| `upload_page.html` | 独立的媒体文件上传页面 |
-| `lib/` | Leaflet 地图库 |
+| `edit_processor.py` | KML 编辑处理逻辑 |
+| `templates/index.html` | 前端页面（HTML + CSS） |
+| `templates/upload.html` | 独立的媒体文件上传页面 |
+| `static/js/editor.js` | 前端交互逻辑（Leaflet 地图 + 编辑操作） |
+| `static/lib/` | Leaflet 地图库 |
 
 ## 技术栈
 

@@ -26,3 +26,5 @@ track_info.json
 upload_meta.json
 pending_edits.json
 edit_errors.log
+.venv/
+.claude
