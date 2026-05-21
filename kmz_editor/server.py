@@ -4,11 +4,12 @@ import os, json, traceback, glob, tempfile
 from urllib.parse import unquote
 from flask import Flask, request, jsonify, send_file, send_from_directory, abort
 
-import edit_processor as edit_mod
+from kmz_editor import edit_processor as edit_mod
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 PORT = 8899
-DIR = os.path.dirname(os.path.abspath(__file__))
+from kmz_editor import ROOT
+DIR = ROOT
 STATIC = os.path.join(DIR, 'static')
 TEMPLATES = os.path.join(DIR, 'templates')
 MIME = {
@@ -202,8 +203,11 @@ def status():
 
 # ── Entrypoint ───────────────────────────────────────────────
 
-if __name__ == '__main__':
+def main():
     print(f'🚀 Track Editor: http://0.0.0.0:{PORT}')
     print(f'   Local: http://127.0.0.1:{PORT}')
     print(f'   Network: http://192.168.3.10:{PORT}')
     app.run(host='0.0.0.0', port=PORT, threaded=True, use_reloader=False)
+
+if __name__ == '__main__':
+    main()

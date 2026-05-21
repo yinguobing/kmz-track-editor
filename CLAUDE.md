@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- **Start the dev server**: `python3 server.py` (runs on http://0.0.0.0:8899)
+- **Start the dev server**: `python3 -m kmz_editor.server` (runs on http://0.0.0.0:8899)
 - No build step, test suite, or linter exists.
 
 ## Architecture
 
 A single-page track editor for editing KMZ trajectory files exported from the 两步路 (2bulu) app. Flask backend + vanilla JS frontend with Leaflet maps.
 
-### Backend (`server.py`)
+### Backend (`kmz_editor/server.py`)
 
 Flask server on port 8899. Key routes:
 
@@ -25,7 +25,7 @@ Flask server on port 8899. Key routes:
 
 Static files are served from the project root. `safe_path()` prevents directory traversal.
 
-### Edit Processing (`edit_processor.py`)
+### Edit Processing (`kmz_editor/edit_processor.py`)
 
 `run_edits(removals, wpDeleted, wpEdited)` reads `original.kmz`, parses its `doc.kml` with `xml.etree.ElementTree`, and:
 

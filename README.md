@@ -7,7 +7,7 @@
 ## 快速开始
 
 ```bash
-python3 server.py
+python3 -m kmz_editor.server
 ```
 
 启动后访问 http://127.0.0.1:8899，将 .kmz 文件拖入地图即可开始编辑。

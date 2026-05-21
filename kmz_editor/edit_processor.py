@@ -7,7 +7,8 @@ and produces a new doc.kml that preserves the 10-segment structure.
 import os, json, re, shutil, zipfile
 import xml.etree.ElementTree as ET
 
-DIR = os.path.dirname(os.path.abspath(__file__))
+from kmz_editor import ROOT
+DIR = ROOT
 ns = 'http://www.opengis.net/kml/2.2'
 gx_ns = 'http://www.google.com/kml/ext/2.2'
 ET.register_namespace('', ns)

@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 8899
 
-CMD ["python3", "server.py"]
+CMD ["python3", "-m", "kmz_editor.server"]
