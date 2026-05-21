@@ -261,7 +261,7 @@ function renderWaypoints(){
           '<button data-action="edit-wp" data-idx="'+idx+'" style="flex:1;background:var(--border);color:var(--ink);border:none;border-radius:999px;padding:4px 0;font-size:11px;cursor:pointer;font-weight:500">编辑名称</button>'+
           '<button data-action="delete-wp" data-idx="'+idx+'" style="flex:1;background:var(--coral);color:#fff;border:none;border-radius:999px;padding:4px 0;font-size:11px;cursor:pointer;font-weight:500">删除</button>'+
         '</div></div>';
-        this.unbindTooltip();this.bindPopup(h,{maxWidth:380,minWidth:280}).openPopup();
+        this.closeTooltip();this.unbindPopup();this.bindPopup(h,{maxWidth:380,minWidth:280}).openPopup();
       };
     })(w,i,wn));
     m.addTo(wpGroup);
