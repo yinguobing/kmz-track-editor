@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="两步路轨迹编辑器 — 基于 Web 的 KMZ 轨迹编辑工具，支持删除轨迹段、管理标注点、导出 KMZ 文件。">
+<title>两步路轨迹编辑器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Cartographic Field Journal — 制图手记
+   两步路轨迹编辑器 · Landing Page
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  --paper: #faf5ed;
+  --paper-light: #fefbf7;
+  --paper-dark: #f2e9db;
+  --ink: #2c2016;
+  --ink-soft: #4a3d30;
+  --ink-muted: #8c7e70;
+  --terracotta: #c4683c;
+  --terracotta-deep: #9e4f2e;
+  --terracotta-glow: rgba(196, 104, 60, 0.18);
+  --olive: #5a7d4a;
+  --olive-deep: #446337;
+  --gold: #c4993c;
+  --gold-light: #e0c878;
+  --sky: #8aacb8;
+  --sky-light: #c5dbe3;
+  --stone: #e0d8ce;
+  --stone-dark: #c4b9a8;
+
+  --font-display: 'Fraunces', 'Noto Serif SC', 'STSong', 'Songti SC', serif;
+  --font-heading: 'Noto Serif SC', 'STSong', 'Songti SC', serif;
+  --font-body: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --content-max: 1040px;
+}
+
+/* ── Reset & Base ──────────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  background: var(--paper);
+  color: var(--ink-soft);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Paper grain texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.8'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 300px 300px;
+}
+
+/* Warm paper gradient overlay — subtle vignette */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 30%, transparent 0%, rgba(180, 160, 130, 0.08) 100%),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(250, 245, 237, 0.3) 0%, transparent 70%);
+}
+
+/* ── Navigation ────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 16px 24px;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+
+.nav.scrolled {
+  background: rgba(250, 245, 237, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+}
+
+.nav-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.3px;
+  text-decoration: none;
+}
+
+.nav-cta {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--paper-light);
+  background: var(--terracotta);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 22px;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: 0.4px;
+  transition: all 0.25s;
+  box-shadow: 0 2px 8px var(--terracotta-glow);
+}
+
+.nav-cta:hover {
+  background: var(--terracotta-deep);
+  box-shadow: 0 4px 16px rgba(196, 104, 60, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ── Sections wrapper ──────────────────────────────────────── */
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+section {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* ── Hero ──────────────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 60px;
+  padding-bottom: 80px;
+  position: relative;
+}
+
+/* Decorative topographic contour behind hero text */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  right: -8%;
+  width: 55%;
+  height: 70%;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 500 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%232c2016'%3E%3Cpath d='M0,300 Q60,240 120,280 T250,260 T380,250 T500,230' stroke-width='1.2'/%3E%3Cpath d='M0,260 Q70,210 140,240 T280,210 T420,195 T500,180' stroke-width='1'/%3E%3Cpath d='M0,340 Q50,290 100,320 T220,295 T350,275 T500,260' stroke-width='1'/%3E%3Cpath d='M0,220 Q80,175 160,200 T300,170 T440,155 T500,145' stroke-width='0.8'/%3E%3Cpath d='M0,380 Q55,340 110,360 T240,330 T370,310 T500,295' stroke-width='0.8'/%3E%3Cpath d='M0,180 Q90,140 180,165 T330,140 T460,125 T500,118' stroke-width='0.6'/%3E%3Cpath d='M0,420 Q65,385 130,400 T260,375 T400,355 T500,340' stroke-width='0.6'/%3E%3Cpath d='M0,145 Q100,110 200,130 T350,108 T480,95 T500,92' stroke-width='0.5'/%3E%3Cpath d='M0,460 Q70,430 140,445 T280,420 T420,400 T500,385' stroke-width='0.5'/%3E%3Cpath d='M0,115 Q105,82 210,100 T360,80 T490,70 T500,68' stroke-width='0.4'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+/* Trail marker decoration */
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 18%;
+  right: 12%;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='%232c2016' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='28' fill='none' stroke='%232c2016' stroke-width='1.5'/%3E%3Ccircle cx='50' cy='50' r='8' fill='none' stroke='%232c2016' stroke-width='2.5'/%3E%3Cline x1='50' y1='2' x2='50' y2='20' stroke='%232c2016' stroke-width='2'/%3E%3Cline x1='50' y1='80' x2='50' y2='98' stroke='%232c2016' stroke-width='2'/%3E%3Cline x1='2' y1='50' x2='20' y2='50' stroke='%232c2016' stroke-width='2'/%3E%3Cline x1='80' y1='50' x2='98' y2='50' stroke='%232c2016' stroke-width='2'/%3E%3C/svg%3E");
+  background-size: contain;
+}
+
+.hero-tag {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 28px;
+  animation: fadeUp 0.7s 0.1s both cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.hero h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(42px, 6.5vw, 72px);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  margin-bottom: 24px;
+  max-width: 700px;
+  animation: fadeUp 0.7s 0.2s both cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.hero h1 em {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  color: var(--terracotta);
+  position: relative;
+}
+
+/* Underline swoosh for the emphasized word */
+.hero h1 em::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: var(--terracotta-glow);
+  border-radius: 3px;
+  z-index: -1;
+}
+
+.hero-desc {
+  font-family: var(--font-body);
+  font-size: clamp(16px, 2vw, 19px);
+  font-weight: 300;
+  color: var(--ink-soft);
+  line-height: 1.8;
+  max-width: 480px;
+  margin-bottom: 40px;
+  animation: fadeUp 0.7s 0.3s both cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.7s 0.4s both cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.btn-primary {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: #fff;
+  background: var(--terracotta);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 32px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  box-shadow: 0 4px 16px var(--terracotta-glow);
+}
+
+.btn-primary:hover {
+  background: var(--terracotta-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(196, 104, 60, 0.28);
+}
+
+.btn-secondary {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1.5px solid var(--stone-dark);
+  border-radius: 999px;
+  padding: 14px 28px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.btn-secondary:hover {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+  background: var(--terracotta-glow);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Divider line with trail marker ────────────────────────── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.section-divider .line {
+  flex: 1;
+  height: 1px;
+  background: var(--stone);
+}
+
+.section-divider .mark {
+  width: 10px;
+  height: 10px;
+  background: var(--terracotta);
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+/* ── Features ──────────────────────────────────────────────── */
+.features {
+  padding-top: 100px;
+  padding-bottom: 100px;
+}
+
+.features-header {
+  margin-bottom: 64px;
+}
+
+.features-header .label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 12px;
+}
+
+.features-header h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+  max-width: 500px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.feature-card {
+  background: var(--paper-light);
+  border: 1px solid var(--stone);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  transition: all 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle contour pattern on card hover */
+.feature-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,80 Q50,65 100,75 T200,70' fill='none' stroke='%23c4683c' stroke-width='0.5' opacity='0.15'/%3E%3Cpath d='M0,100 Q60,88 120,96 T200,92' fill='none' stroke='%23c4683c' stroke-width='0.5' opacity='0.15'/%3E%3Cpath d='M0,120 Q40,110 80,116 T160,108 T200,106' fill='none' stroke='%23c4683c' stroke-width='0.5' opacity='0.15'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+.feature-card:hover { border-color: var(--terracotta); transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+.feature-card:hover::after { opacity: 1; }
+
+.feature-icon {
+  font-size: 32px;
+  margin-bottom: 18px;
+  display: block;
+}
+
+.feature-card h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+  letter-spacing: 0.2px;
+}
+
+.feature-card p {
+  font-size: 14px;
+  color: var(--ink-muted);
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* ── How It Works ──────────────────────────────────────────── */
+.how-it-works {
+  padding-top: 100px;
+  padding-bottom: 100px;
+}
+
+.steps-header {
+  text-align: center;
+  margin-bottom: 72px;
+}
+
+.steps-header .label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 12px;
+}
+
+.steps-header h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.steps-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  counter-reset: step;
+}
+
+.step {
+  position: relative;
+  text-align: center;
+  padding: 0 12px;
+}
+
+.step-num {
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 600;
+  color: var(--stone);
+  line-height: 1;
+  margin-bottom: 20px;
+  transition: color 0.3s;
+}
+
+.step:hover .step-num { color: var(--terracotta-glow); }
+
+.step h3 {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.step p {
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* Connecting line between steps */
+.steps-list {
+  position: relative;
+}
+.steps-list::before {
+  content: '';
+  position: absolute;
+  top: 28px;
+  left: 17%;
+  right: 17%;
+  height: 1px;
+  background: var(--stone);
+  z-index: 0;
+}
+
+.step { z-index: 1; }
+
+/* ── Screenshot Showcase ───────────────────────────────────── */
+.showcase {
+  padding-top: 100px;
+  padding-bottom: 100px;
+}
+
+.showcase-inner {
+  background: var(--paper-dark);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.showcase-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%232c2016'%3E%3Cpath d='M0,50 Q50,38 100,45 T200,40' stroke-width='0.8'/%3E%3Cpath d='M0,70 Q60,60 120,66 T200,62' stroke-width='0.6'/%3E%3Cpath d='M0,90 Q45,82 95,86 T200,82' stroke-width='0.6'/%3E%3Cpath d='M0,110 Q55,102 110,108 T200,104' stroke-width='0.5'/%3E%3Cpath d='M0,130 Q40,124 80,128 T160,122 T200,120' stroke-width='0.5'/%3E%3Cpath d='M0,150 Q50,144 100,148 T200,142' stroke-width='0.4'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.showcase-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+}
+
+.showcase-inner h2 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.showcase-inner > p {
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+
+.showcase-frame {
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--stone);
+  background: var(--paper-light);
+}
+
+.showcase-frame img {
+  width: 100%;
+  display: block;
+}
+
+/* ── CTA Section ───────────────────────────────────────────── */
+.cta-section {
+  padding-top: 100px;
+  padding-bottom: 120px;
+  text-align: center;
+}
+
+.cta-section h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.cta-section > p {
+  font-size: 16px;
+  color: var(--ink-muted);
+  max-width: 480px;
+  margin: 0 auto 36px;
+  font-weight: 300;
+  line-height: 1.7;
+}
+
+.cta-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--paper-dark);
+  border: 1px solid var(--stone);
+  border-radius: var(--radius);
+  padding: 12px 24px;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 36px;
+  letter-spacing: -0.2px;
+}
+
+.cta-code .prompt {
+  color: var(--terracotta);
+  font-weight: 500;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--stone);
+  padding: 36px 28px;
+}
+
+.footer-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-inner span {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-weight: 300;
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer-links a {
+  font-size: 12px;
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-weight: 300;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--terracotta); }
+
+/* ── Scroll Reveal ─────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .steps-list { grid-template-columns: 1fr; gap: 40px; }
+  .steps-list::before { display: none; }
+  .hero h1 { font-size: 36px; }
+  .hero { min-height: auto; padding-top: 120px; padding-bottom: 60px; }
+  .hero::before { display: none; }
+  .hero::after { display: none; }
+  .showcase-inner { padding: 28px 20px; }
+  .feature-card { padding: 24px 20px; }
+  section { padding: 0 20px; }
+}
+
+@media (max-width: 480px) {
+  .hero-actions { flex-direction: column; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary { text-align: center; justify-content: center; }
+  .footer-inner { flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">两步路轨迹编辑器</a>
+    <a href="#start" class="nav-cta">开始使用</a>
+  </div>
+</nav>
+
+<div class="content">
+
+  <!-- ═══ Hero ═══ -->
+  <section class="hero">
+    <p class="hero-tag">户外 · 轨迹 · 编辑</p>
+    <h1>为你的<em>每一步</em><br>留下精准印迹</h1>
+    <p class="hero-desc">
+      一个轻量、纯粹的 Web 轨迹编辑器。上传两步路导出的 KMZ 文件，在地图上直观编辑轨迹段、管理标注点，导出干净的轨迹文件。
+    </p>
+    <div class="hero-actions" id="start">
+      <a href="#start" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        快速开始
+      </a>
+      <a href="#features" class="btn-secondary">
+        了解更多
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <div class="section-divider"><span class="line"></span><span class="mark"></span><span class="line"></span></div>
+
+  <!-- ═══ Features ═══ -->
+  <section class="features reveal" id="features">
+    <div class="features-header">
+      <p class="label">核心功能</p>
+      <h2>一切所需，尽在地图之上</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">✂️</span>
+        <h3>轨迹段删除</h3>
+        <p>在地图上依次点击两个点，选中一段轨迹后确认删除。自动重新计算剩余距离与点数。支持撤销单段或清空全部。</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📍</span>
+        <h3>标注点管理</h3>
+        <p>查看、重命名或删除轨迹中的标注点。菱形标记清晰展示每个标注位置，编辑自动持久化到浏览器本地存储。</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🛰️</span>
+        <h3>双地图切换</h3>
+        <p>Esri 高清卫星影像与 OpenStreetMap 标准地图一键切换。卫星图层叠加地名标注，地形细节一目了然。</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📦</span>
+        <h3>一键导出 KMZ</h3>
+        <p>编辑完成后导出完整 KMZ 文件，包含所有媒体附件。轨迹名称可自定义，下载即用，无需额外处理。</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"><span class="line"></span><span class="mark"></span><span class="line"></span></div>
+
+  <!-- ═══ How It Works ═══ -->
+  <section class="how-it-works reveal">
+    <div class="steps-header">
+      <p class="label">三步开始</p>
+      <h2>简单到只需拖放</h2>
+    </div>
+    <div class="steps-list">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>上传轨迹</h3>
+        <p>将两步路 App 导出的 .kmz 文件拖入地图，轨迹即刻渲染，标注点自动加载。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>地图编辑</h3>
+        <p>在地图上点击轨迹选择范围，确认删除。编辑标注点名称，移除不需要的标记。所有操作所见即所得。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>导出文件</h3>
+        <p>点击导出按钮，下载编辑后的 KMZ 文件。文件包含完整的轨迹数据、标注点信息和关联媒体。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Screenshot Showcase ═══ -->
+  <section class="showcase reveal">
+    <div class="showcase-inner">
+      <p class="showcase-label">应用预览</p>
+      <h2>直观的轨迹编辑体验</h2>
+      <p>深色山野主题，霜玻璃面板，地图即画布。</p>
+      <div class="showcase-frame">
+        <img src="../screenshot.jpg" alt="两步路轨迹编辑器截图" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="cta-section reveal">
+    <h2>准备好编辑你的轨迹了吗？</h2>
+    <p>无需注册、无需安装依赖以外的任何东西。克隆仓库，一行命令即可启动。</p>
+    <div class="cta-code">
+      <span class="prompt">$</span> python3 -m kmz_editor.server
+    </div>
+    <br>
+    <a href="#start" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/></svg>
+      返回顶部
+    </a>
+  </section>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span>两步路轨迹编辑器 — 开源工具，为户外爱好者打造</span>
+    <div class="footer-links">
+      <a href="https://github.com">GitHub</a>
+      <a href="#features">功能</a>
+      <a href="#start">开始使用</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── Nav scroll effect ──────────────────────────────────────── */
+(function(){
+  var nav = document.getElementById('nav');
+  var ticking = false;
+  window.addEventListener('scroll', function(){
+    if (!ticking) {
+      requestAnimationFrame(function(){
+        nav.classList.toggle('scrolled', window.scrollY > 40);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  });
+
+  /* ── Scroll reveal ────────────────────────────────────────── */
+  var reveals = document.querySelectorAll('.reveal');
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
+  reveals.forEach(function(el){ observer.observe(el); });
+})();
+</script>
+
+</body>
+</html>
