@@ -218,16 +218,15 @@ section {
   animation: fadeUp 0.7s 0.2s both cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-.hero h1 em {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 500;
+.hero h1 .hero-emp {
+  font-family: var(--font-heading);
+  font-weight: 700;
   color: var(--terracotta);
   position: relative;
 }
 
 /* Underline swoosh for the emphasized word */
-.hero h1 em::after {
+.hero h1 .hero-emp::after {
   content: '';
   position: absolute;
   bottom: 2px;
@@ -695,7 +694,7 @@ section {
   <!-- ═══ Hero ═══ -->
   <section class="hero">
     <p class="hero-tag">户外 · 轨迹 · 编辑</p>
-    <h1>为你的<em>每一步</em><br>留下精准印迹</h1>
+    <h1>为你的<span class="hero-emp">每一步</span><br>留下精准印迹</h1>
     <p class="hero-desc">
       一个轻量、纯粹的 Web 轨迹编辑器。上传两步路导出的 KMZ 文件，在地图上直观编辑轨迹段、管理标注点，导出干净的轨迹文件。
     </p>
